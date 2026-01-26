@@ -13,7 +13,7 @@ const generateToken = (id) => {
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, isAdmin } = req.body;
 
     // Validation
     if (!name || !email || !password) {
@@ -37,7 +37,7 @@ export const register = async (req, res) => {
       name,
       email,
       password,
-      role: role || "student",
+      isAdmin: isAdmin || false,
     });
 
     // Generate token
@@ -49,7 +49,7 @@ export const register = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        isAdmin: user.isAdmin,
         token,
       },
     });
@@ -106,7 +106,7 @@ export const login = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        isAdmin: user.isAdmin,
         token,
       },
     });

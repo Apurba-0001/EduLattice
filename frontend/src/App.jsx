@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import MyUploads from "./pages/MyUploads";
 import AdminPanel from "./pages/AdminPanel";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   return (
@@ -55,7 +56,7 @@ function App() {
             path="/admin"
             element={
               <AdminRoute>
-                <AdminPanel />
+                <AdminDashboard />
               </AdminRoute>
             }
           />

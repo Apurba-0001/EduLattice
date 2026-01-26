@@ -111,19 +111,6 @@ const Register = () => {
           />
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Role</label>
-          <select
-            name="role"
-            className="form-select"
-            value={formData.role}
-            onChange={handleChange}
-          >
-            <option value="student">Student</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-
         <button
           type="submit"
           className="btn btn-primary"
