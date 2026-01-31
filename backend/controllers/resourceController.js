@@ -2,6 +2,7 @@ import Resource from "../models/Resource.js";
 import googleDriveService from "../services/googleDrive.js";
 import cloudinaryService from "../services/cloudinary.js";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 // Helper function to determine file type
 const getFileType = (mimetype, filename) => {
@@ -22,11 +23,11 @@ const getFileType = (mimetype, filename) => {
 // @access  Private
 export const uploadResource = async (req, res) => {
   try {
-    const { title, description, subject, semester, tags } = req.body;
+    const { title, description, subject, semester, resourceType } = req.body;
     const file = req.file;
 
     // Validation
-    if (!title || !description || !subject || !semester) {
+    if (!title || !description || !subject || !semester || !resourceType) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields",
@@ -62,40 +63,49 @@ export const uploadResource = async (req, res) => {
     let uploadResult;
     let driveFileId = null;
 
-    // Upload to appropriate service
+    // Extract file extension from original file
+    const fileExtension = path.extname(file.originalname);
+
+    // Generate unique UUID for this file
+    const fileId = uuidv4();
+
+    // Create storage fileName: "Title_UUID.ext"
+    // Format: title_[uuid].[extension] to ensure uniqueness
+    const storageFileName = `${title}_${fileId.substring(0, 8)}${fileExtension}`;
+
+    // Display fileName: "Title.ext" for user-friendly downloads
+    const displayFileName = title + fileExtension;
+
+    // Upload to appropriate service with unique storage name
     if (fileType === "image") {
       // Upload to Cloudinary
       uploadResult = await cloudinaryService.uploadImage(
         file.buffer,
-        file.originalname,
+        storageFileName,
       );
     } else {
       // Upload to Google Drive
       uploadResult = await googleDriveService.uploadFile(
         file.buffer,
-        file.originalname,
+        storageFileName,
         file.mimetype,
       );
       driveFileId = uploadResult.fileId;
     }
 
-    // Parse tags
-    const tagsArray =
-      typeof tags === "string"
-        ? tags.split(",").map((tag) => tag.trim())
-        : tags || [];
-
     // Create resource in database
     const resource = await Resource.create({
+      fileId,
       title,
       description,
       subject,
       semester,
-      tags: tagsArray,
+      resourceType,
       fileType,
       fileUrl: uploadResult.fileUrl,
       driveFileId,
-      fileName: file.originalname,
+      fileName: displayFileName,
+      storageFileName: storageFileName,
       fileSize: file.size,
       uploadedBy: req.user._id,
     });
@@ -125,9 +135,11 @@ export const getResources = async (req, res) => {
       subject,
       semester,
       keyword,
-      tags,
+      resourceType,
       page = 1,
       limit = 10,
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = req.query;
 
     // Build query
@@ -141,9 +153,8 @@ export const getResources = async (req, res) => {
       query.semester = { $regex: semester, $options: "i" };
     }
 
-    if (tags) {
-      const tagsArray = tags.split(",").map((tag) => tag.trim());
-      query.tags = { $in: tagsArray };
+    if (resourceType) {
+      query.resourceType = resourceType;
     }
 
     if (keyword) {
@@ -157,10 +168,21 @@ export const getResources = async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Build sort object
+    const sortObj = {};
+    const sortField =
+      sortBy === "createdAt"
+        ? "createdAt"
+        : sortBy === "title"
+          ? "title"
+          : "views";
+    const sortVal = sortOrder === "asc" ? 1 : -1;
+    sortObj[sortField] = sortVal;
+
     // Execute query
     const resources = await Resource.find(query)
       .populate("uploadedBy", "name email")
-      .sort({ createdAt: -1 })
+      .sort(sortObj)
       .limit(parseInt(limit))
       .skip(skip);
 
@@ -191,7 +213,7 @@ export const getResource = async (req, res) => {
   try {
     const resource = await Resource.findById(req.params.id).populate(
       "uploadedBy",
-      "name email role",
+      "name email isAdmin",
     );
 
     if (!resource) {
@@ -237,10 +259,31 @@ export const getMyUploads = async (req, res) => {
 
 // @desc    Delete resource
 // @route   DELETE /api/resources/:id
-// @access  Private (Owner or Admin)
+// @access  Private (Owner or Admin only)
 export const deleteResource = async (req, res) => {
   try {
     const resource = req.resource; // Set by authorizeResourceAccess middleware
+    const userId = req.user._id.toString();
+    const uploadedBy = resource.uploadedBy._id.toString();
+    const isAdmin = req.user.isAdmin === true;
+
+    // Log deletion attempt
+    console.log(`Delete attempt:
+      User ID: ${userId}
+      Uploaded By: ${uploadedBy}
+      Is Admin: ${isAdmin}
+      File: ${resource.fileName}
+      FileId: ${resource.fileId}`);
+
+    // Authorization check (redundant but explicit)
+    if (!isAdmin && userId !== uploadedBy) {
+      console.log(`❌ Unauthorized deletion attempt by user ${userId}`);
+      return res.status(403).json({
+        success: false,
+        message:
+          "You are not authorized to delete this resource. Only the uploader or admin can delete files.",
+      });
+    }
 
     // Delete from storage
     if (resource.fileType === "image") {
@@ -249,19 +292,33 @@ export const deleteResource = async (req, res) => {
       const publicIdWithExt = urlParts[urlParts.length - 1];
       const publicId = `edulattice/${publicIdWithExt.split(".")[0]}`;
       await cloudinaryService.deleteImage(publicId);
+      console.log(`✅ Deleted image from Cloudinary: ${publicId}`);
     } else if (resource.driveFileId) {
       await googleDriveService.deleteFile(resource.driveFileId);
+      console.log(
+        `✅ Deleted document from Google Drive: ${resource.driveFileId}`,
+      );
     }
 
     // Delete from database
     await Resource.findByIdAndDelete(req.params.id);
+    console.log(`✅ Deleted resource from database: ${resource.fileId}`);
+
+    // Log who deleted it
+    const deletedBy = isAdmin && userId !== uploadedBy ? "Admin" : "Owner";
+    console.log(`✅ Resource deleted successfully by ${deletedBy}`);
 
     res.status(200).json({
       success: true,
       message: "Resource deleted successfully",
+      data: {
+        deletedFileId: resource.fileId,
+        fileName: resource.fileName,
+        deletedBy: deletedBy,
+      },
     });
   } catch (error) {
-    console.error("Delete error:", error);
+    console.error("❌ Delete error:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Server error while deleting resource",

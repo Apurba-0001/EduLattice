@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../utils/api";
-import ResourceCard from "../components/ResourceCard";
+import ResourceTable from "../components/ResourceTable";
 
 const AdminPanel = () => {
   const [resources, setResources] = useState([]);
@@ -187,15 +187,21 @@ const AdminPanel = () => {
             )}
 
             {activeTab === "resources" && (
-              <div className="grid grid-2">
-                {resources.map((resource) => (
-                  <ResourceCard
-                    key={resource._id}
-                    resource={resource}
+              <div className="card">
+                <h3 style={{ marginTop: 0, marginBottom: "20px" }}>
+                  All Resources ({resources.length})
+                </h3>
+                {resources.length === 0 ? (
+                  <p style={{ textAlign: "center", color: "#6b7280" }}>
+                    No resources found
+                  </p>
+                ) : (
+                  <ResourceTable
+                    resources={resources}
                     onDelete={handleDeleteResource}
                     showActions={true}
                   />
-                ))}
+                )}
               </div>
             )}
 

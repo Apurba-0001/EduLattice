@@ -11,6 +11,7 @@ import AdminRoute from "./components/AdminRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import AllResources from "./pages/AllResources";
 import Upload from "./pages/Upload";
 import MyUploads from "./pages/MyUploads";
 import AdminPanel from "./pages/AdminPanel";
@@ -30,6 +31,15 @@ function App() {
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/all-resources"
+            element={
+              <PrivateRoute>
+                <AllResources />
               </PrivateRoute>
             }
           />

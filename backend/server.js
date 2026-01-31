@@ -1,15 +1,32 @@
 import dns from "dns";
+import path from "path";
+import { fileURLToPath } from "url";
+
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
-import express from "express";
+// Get current directory for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables FIRST before any other imports
 import dotenv from "dotenv";
+const envPath = path.join(__dirname, ".env");
+console.log("Loading .env from:", envPath);
+const dotenvResult = dotenv.config({ path: envPath });
+console.log(
+  "dotenv config result:",
+  dotenvResult.error ? dotenvResult.error.message : "Success",
+);
+console.log(
+  "CLOUDINARY_CLOUD_NAME from process.env:",
+  process.env.CLOUDINARY_CLOUD_NAME,
+);
+
+import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
-
-// Load environment variables
-dotenv.config();
 
 // Initialize Express app
 const app = express();
@@ -20,8 +37,18 @@ connectDB();
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? process.env.FRONTEND_URL
+        : [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174",
+          ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 

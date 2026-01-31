@@ -50,6 +50,7 @@ export const register = async (req, res) => {
         name: user.name,
         email: user.email,
         isAdmin: user.isAdmin,
+        createdAt: user.createdAt,
         token,
       },
     });
@@ -107,6 +108,7 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         isAdmin: user.isAdmin,
+        createdAt: user.createdAt,
         token,
       },
     });

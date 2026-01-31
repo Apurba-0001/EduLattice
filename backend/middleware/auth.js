@@ -46,7 +46,7 @@ export const protect = async (req, res, next) => {
 };
 
 export const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
+  if (req.user && req.user.isAdmin === true) {
     next();
   } else {
     res.status(403).json({
@@ -68,23 +68,36 @@ export const authorizeResourceAccess = async (req, res, next) => {
       });
     }
 
+    const userId = req.user._id.toString();
+    const uploadedById = resource.uploadedBy.toString();
+    const isAdmin = req.user.isAdmin === true;
+
     // Allow if user is admin or the uploader
-    if (
-      req.user.role === "admin" ||
-      resource.uploadedBy.toString() === req.user._id.toString()
-    ) {
+    if (isAdmin || uploadedById === userId) {
+      console.log(`✅ Authorization granted:
+        User: ${userId}
+        Uploader: ${uploadedById}
+        Is Admin: ${isAdmin}
+        Resource: ${resource.fileId}`);
       req.resource = resource;
       next();
     } else {
-      res.status(403).json({
+      console.log(`❌ Authorization denied:
+        User: ${userId}
+        Uploader: ${uploadedById}
+        Is Admin: ${isAdmin}
+        Resource: ${resource.fileId}`);
+      return res.status(403).json({
         success: false,
-        message: "Not authorized to perform this action",
+        message:
+          "Not authorized to perform this action. Only the file uploader or an admin can modify this resource.",
       });
     }
   } catch (error) {
+    console.error("Authorization error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error during authorization check",
     });
   }
 };
