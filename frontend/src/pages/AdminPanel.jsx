@@ -32,6 +32,7 @@ const AdminPanel = () => {
       setError("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch data");
+      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -51,133 +52,152 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="page">
-      <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">Admin Panel</h1>
-          <p className="page-subtitle">Manage platform resources and users</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 py-6 sm:py-10 px-4 sm:px-6 lg:px-8 animate-fadeIn">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 mb-6 sm:mb-8 shadow-lg animate-slideDown">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Admin Panel
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base font-medium">
+            Manage platform resources and users
+          </p>
         </div>
 
-        <div className="card">
-          <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 p-4 sm:p-5 bg-red-50 border-l-4 border-red-500 rounded-xl shadow-md animate-slideDown">
+            <p className="text-red-700 font-semibold flex items-center gap-2">
+              <span>⚠️</span>
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-lg">
+          <div className="flex flex-wrap gap-3 sm:gap-4">
             <button
-              className={`btn ${activeTab === "stats" ? "btn-primary" : "btn-secondary"}`}
+              className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 ${
+                activeTab === "stats"
+                  ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
               onClick={() => setActiveTab("stats")}
             >
-              Statistics
+              📊 Statistics
             </button>
             <button
-              className={`btn ${activeTab === "resources" ? "btn-primary" : "btn-secondary"}`}
+              className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 ${
+                activeTab === "resources"
+                  ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
               onClick={() => setActiveTab("resources")}
             >
-              All Resources
+              📚 All Resources
             </button>
             <button
-              className={`btn ${activeTab === "users" ? "btn-primary" : "btn-secondary"}`}
+              className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 ${
+                activeTab === "users"
+                  ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
               onClick={() => setActiveTab("users")}
             >
-              All Users
+              👥 All Users
             </button>
           </div>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-
+        {/* Loading State */}
         {loading ? (
-          <div className="loading">
-            <div className="spinner"></div>
+          <div className="bg-white rounded-2xl p-12 sm:p-16 text-center shadow-lg">
+            <div className="inline-block w-12 h-12 sm:w-16 sm:h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 font-medium">Loading data...</p>
           </div>
         ) : (
           <>
+            {/* Statistics Tab */}
             {activeTab === "stats" && stats && (
-              <div>
-                <div className="grid grid-2">
-                  <div className="card">
-                    <h3 style={{ marginBottom: "15px", fontSize: "18px" }}>
-                      Overview
-                    </h3>
-                    <div
-                      style={{
-                        fontSize: "32px",
-                        fontWeight: "bold",
-                        color: "#4f46e5",
-                      }}
-                    >
-                      {stats.total}
+              <div className="animate-fadeIn">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+                  <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+                    <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                      Total Resources
                     </div>
-                    <div style={{ color: "#6b7280" }}>Total Resources</div>
+                    <div className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      {stats.total || 0}
+                    </div>
                   </div>
-
-                  <div className="card">
-                    <h3 style={{ marginBottom: "15px", fontSize: "18px" }}>
-                      By Type
-                    </h3>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>PDFs:</span>
-                        <strong>{stats.byType.pdf}</strong>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>PPTs:</span>
-                        <strong>{stats.byType.ppt}</strong>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>Docs:</span>
-                        <strong>{stats.byType.doc}</strong>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>Images:</span>
-                        <strong>{stats.byType.image}</strong>
-                      </div>
+                  <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+                    <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                      PDF Files
+                    </div>
+                    <div className="text-4xl font-extrabold bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent">
+                      {stats.byType?.pdf || 0}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+                    <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                      PPT Files
+                    </div>
+                    <div className="text-4xl font-extrabold bg-gradient-to-r from-orange-500 to-amber-600 bg-clip-text text-transparent">
+                      {stats.byType?.ppt || 0}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+                    <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                      Documents
+                    </div>
+                    <div className="text-4xl font-extrabold bg-gradient-to-r from-blue-500 to-cyan-600 bg-clip-text text-transparent">
+                      {stats.byType?.doc || 0}
                     </div>
                   </div>
                 </div>
 
-                {stats.bySubject.length > 0 && (
-                  <div className="card">
-                    <h3 style={{ marginBottom: "15px", fontSize: "18px" }}>
+                {/* Resources by Subject */}
+                {stats.bySubject && stats.bySubject.length > 0 && (
+                  <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg mb-6">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
                       Resources by Subject
                     </h3>
-                    <div style={{ display: "grid", gap: "10px" }}>
-                      {stats.bySubject.map((item, index) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {stats.bySubject.map((item) => (
                         <div
-                          key={index}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            padding: "10px",
-                            backgroundColor: "#f9fafb",
-                            borderRadius: "5px",
-                          }}
+                          key={item._id}
+                          className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl hover:from-indigo-100 hover:to-purple-100 transition-colors duration-200"
                         >
-                          <span>{item._id}</span>
-                          <strong>{item.count}</strong>
+                          <span className="font-medium text-gray-700">
+                            {item._id}
+                          </span>
+                          <span className="px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-full text-sm">
+                            {item.count}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resources by Semester */}
+                {stats.bySemester && stats.bySemester.length > 0 && (
+                  <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+                      Resources by Semester
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {stats.bySemester.map((item) => (
+                        <div
+                          key={item._id}
+                          className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl hover:from-indigo-100 hover:to-purple-100 transition-colors duration-200"
+                        >
+                          <span className="font-medium text-gray-700">
+                            {item._id}
+                          </span>
+                          <span className="px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-full text-sm">
+                            {item.count}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -186,15 +206,17 @@ const AdminPanel = () => {
               </div>
             )}
 
+            {/* Resources Tab */}
             {activeTab === "resources" && (
-              <div className="card">
-                <h3 style={{ marginTop: 0, marginBottom: "20px" }}>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg animate-fadeIn">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
                   All Resources ({resources.length})
-                </h3>
+                </h2>
                 {resources.length === 0 ? (
-                  <p style={{ textAlign: "center", color: "#6b7280" }}>
-                    No resources found
-                  </p>
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">📚</div>
+                    <p className="text-gray-500 text-lg">No resources found</p>
+                  </div>
                 ) : (
                   <ResourceTable
                     resources={resources}
@@ -205,44 +227,68 @@ const AdminPanel = () => {
               </div>
             )}
 
+            {/* Users Tab */}
             {activeTab === "users" && (
-              <div className="card">
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr
-                      style={{
-                        borderBottom: "2px solid #e5e7eb",
-                        textAlign: "left",
-                      }}
-                    >
-                      <th style={{ padding: "12px" }}>Name</th>
-                      <th style={{ padding: "12px" }}>Email</th>
-                      <th style={{ padding: "12px" }}>Role</th>
-                      <th style={{ padding: "12px" }}>Joined</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <tr
-                        key={user._id}
-                        style={{ borderBottom: "1px solid #e5e7eb" }}
-                      >
-                        <td style={{ padding: "12px" }}>{user.name}</td>
-                        <td style={{ padding: "12px" }}>{user.email}</td>
-                        <td style={{ padding: "12px" }}>
-                          <span
-                            className={`badge ${user.role === "admin" ? "badge-pdf" : "badge-doc"}`}
+              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg animate-fadeIn">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
+                  All Users ({users.length})
+                </h2>
+                {users.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">👥</div>
+                    <p className="text-gray-500 text-lg">No users found</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider rounded-tl-xl">
+                            Name
+                          </th>
+                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                            Email
+                          </th>
+                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                            Role
+                          </th>
+                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider rounded-tr-xl">
+                            Joined
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {users.map((user, index) => (
+                          <tr
+                            key={user._id}
+                            className="hover:bg-indigo-50 transition-colors duration-200"
                           >
-                            {user.role}
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px" }}>
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            <td className="px-4 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                              {user.name}
+                            </td>
+                            <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">
+                              {user.email}
+                            </td>
+                            <td className="px-4 sm:px-6 py-4">
+                              <span
+                                className={`inline-flex px-3 py-1 text-xs font-bold rounded-full uppercase ${
+                                  user.isAdmin
+                                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
+                                    : "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                }`}
+                              >
+                                {user.isAdmin ? "Admin" : "Student"}
+                              </span>
+                            </td>
+                            <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">
+                              {new Date(user.createdAt).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
           </>

@@ -40,23 +40,18 @@ const Login = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4 sm:px-6 py-6 sm:py-12 lg:py-16 animate-fadeIn">
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8 sm:mb-10 animate-slideDown">
-          <img
-            src="/logo.png"
-            alt="EduLattice Logo"
-            className="h-20 sm:h-24 lg:h-28 w-auto mx-auto mb-4 sm:mb-6"
-          />
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3">
-            EduLattice
-          </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-600 leading-relaxed">
-            Welcome back to your learning hub
-          </p>
-        </div>
-
         {/* Card */}
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-xl p-6 sm:p-8 lg:p-10 animate-slideUp">
+          {/* Header */}
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600">
+              Sign in to your learning hub
+            </p>
+          </div>
+
           {/* Error Alert */}
           {error && (
             <div className="mb-6 sm:mb-7 p-4 sm:p-5 bg-red-50 border-l-4 border-red-500 rounded-xl animate-slideDown">
