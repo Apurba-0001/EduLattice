@@ -1,37 +1,50 @@
+import api from "../utils/api";
+
 const ResourceListItem = ({ resource, onDelete, showActions = true }) => {
-  const handleDownload = () => {
+  const handleDownload = async () => {
     try {
-      let downloadUrl = "";
-      let fileName = resource.fileName || resource.title || "download";
-
-      if (resource.fileType === "image" && resource.fileUrl) {
-        const cloudinaryUrl = new URL(resource.fileUrl);
-        const pathParts = cloudinaryUrl.pathname.split("/");
-        const uploadIndex = pathParts.indexOf("upload");
-
-        if (uploadIndex !== -1) {
-          pathParts.splice(uploadIndex + 1, 0, "fl_attachment");
-          downloadUrl = cloudinaryUrl.origin + pathParts.join("/");
-        } else {
-          downloadUrl = resource.fileUrl;
-        }
-      } else if (resource.driveFileId) {
-        downloadUrl = `https://drive.google.com/uc?export=download&id=${resource.driveFileId}`;
-      } else if (resource.fileUrl) {
-        downloadUrl = resource.fileUrl;
-      }
-
-      if (!downloadUrl) {
-        alert(
-          "Download URL not available for this file. Please contact support.",
-        );
+      if (!resource._id) {
+        alert("Resource ID not found");
         return;
       }
 
-      window.open(downloadUrl, "_blank", "noopener=yes");
+      const fileName = resource.fileName || resource.title || "download";
+
+      // Check if this is a grouped image - if so, download the entire group as zip
+      if (resource.imageGroupId) {
+        console.log(`📦 Downloading grouped images with groupId: ${resource.imageGroupId}`);
+        const response = await api.get(`/resources/${resource._id}/download-group`, {
+          responseType: "blob",
+        });
+
+        // Create blob URL and download zip
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${resource.title || "images"}_group.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // Single file download
+        const response = await api.get(`/resources/${resource._id}/download`, {
+          responseType: "blob",
+        });
+
+        // Create blob URL and download
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
     } catch (error) {
       console.error("Download error:", error);
-      alert("Failed to download file");
+      alert("Failed to download file. Please try again.");
     }
   };
 
@@ -43,6 +56,8 @@ const ResourceListItem = ({ resource, onDelete, showActions = true }) => {
         return "📊";
       case "doc":
         return "📝";
+      case "excel":
+        return "📊";
       case "image":
         return "🖼️";
       default:
@@ -58,6 +73,8 @@ const ResourceListItem = ({ resource, onDelete, showActions = true }) => {
         return "bg-orange-100 text-orange-700";
       case "doc":
         return "bg-blue-100 text-blue-700";
+      case "excel":
+        return "bg-green-100 text-green-700";
       case "image":
         return "bg-green-100 text-green-700";
       default:

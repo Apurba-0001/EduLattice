@@ -53,6 +53,8 @@ const ResourceCard = ({ resource, onDelete, showActions = true }) => {
         return "🎥";
       case "doc":
         return "📝";
+      case "excel":
+        return "📊";
       case "image":
         return "🖼️";
       default:
@@ -68,6 +70,8 @@ const ResourceCard = ({ resource, onDelete, showActions = true }) => {
         return "bg-orange-100 text-orange-700";
       case "doc":
         return "bg-blue-100 text-blue-700";
+      case "excel":
+        return "bg-green-100 text-green-700";
       case "image":
         return "bg-purple-100 text-purple-700";
       default:

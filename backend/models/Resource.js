@@ -50,9 +50,18 @@ const resourceSchema = new mongoose.Schema(
       required: true,
       enum: ["pdf", "ppt", "doc", "image"],
     },
+    imageGroupId: {
+      type: String,
+      default: null,
+      index: true,
+    },
     fileUrl: {
       type: String,
       required: true,
+    },
+    cloudinaryPublicId: {
+      type: String,
+      default: null,
     },
     driveFileId: {
       type: String,

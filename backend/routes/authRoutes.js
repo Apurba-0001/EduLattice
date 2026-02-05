@@ -4,6 +4,7 @@ import {
   login,
   getMe,
   getAllUsers,
+  deleteUser,
 } from "../controllers/authController.js";
 import { protect, adminOnly } from "../middleware/auth.js";
 
@@ -13,5 +14,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/me", protect, getMe);
 router.get("/users", protect, adminOnly, getAllUsers);
+router.delete("/users/:id", protect, adminOnly, deleteUser);
 
 export default router;

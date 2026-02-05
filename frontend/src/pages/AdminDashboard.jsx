@@ -55,7 +55,13 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
+  const handleDeleteUser = async (userId, isAdmin) => {
+    // Prevent deleting admin users
+    if (isAdmin) {
+      alert("Cannot delete admin users");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this user?")) {
       return;
     }
@@ -248,12 +254,18 @@ const AdminDashboard = () => {
                               {new Date(u.createdAt).toLocaleDateString()}
                             </td>
                             <td>
-                              <button
-                                onClick={() => handleDeleteUser(u._id)}
-                                className="btn btn-danger btn-sm"
-                              >
-                                Remove
-                              </button>
+                              {u.isAdmin ? (
+                                <span className="text-gray-400 text-sm italic">
+                                  Protected
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handleDeleteUser(u._id, u.isAdmin)}
+                                  className="btn btn-danger btn-sm"
+                                >
+                                  Remove
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}

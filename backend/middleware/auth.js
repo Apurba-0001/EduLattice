@@ -59,7 +59,10 @@ export const adminOnly = (req, res, next) => {
 export const authorizeResourceAccess = async (req, res, next) => {
   try {
     const Resource = (await import("../models/Resource.js")).default;
-    const resource = await Resource.findById(req.params.id);
+    const resource = await Resource.findById(req.params.id).populate(
+      "uploadedBy",
+      "_id name email isAdmin"
+    );
 
     if (!resource) {
       return res.status(404).json({
@@ -68,8 +71,19 @@ export const authorizeResourceAccess = async (req, res, next) => {
       });
     }
 
+    // Ensure user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
     const userId = req.user._id.toString();
-    const uploadedById = resource.uploadedBy.toString();
+    // Handle both populated and non-populated uploadedBy
+    const uploadedById = resource.uploadedBy._id
+      ? resource.uploadedBy._id.toString()
+      : resource.uploadedBy.toString();
     const isAdmin = req.user.isAdmin === true;
 
     // Allow if user is admin or the uploader
@@ -78,7 +92,8 @@ export const authorizeResourceAccess = async (req, res, next) => {
         User: ${userId}
         Uploader: ${uploadedById}
         Is Admin: ${isAdmin}
-        Resource: ${resource.fileId}`);
+        Resource: ${resource.fileId}
+        Action: ${req.method}`);
       req.resource = resource;
       next();
     } else {
@@ -86,7 +101,8 @@ export const authorizeResourceAccess = async (req, res, next) => {
         User: ${userId}
         Uploader: ${uploadedById}
         Is Admin: ${isAdmin}
-        Resource: ${resource.fileId}`);
+        Resource: ${resource.fileId}
+        Action: ${req.method}`);
       return res.status(403).json({
         success: false,
         message:

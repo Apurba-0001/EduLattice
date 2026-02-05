@@ -4,14 +4,21 @@ import ResourceTable from "../components/ResourceTable";
 
 const MyUploads = () => {
   const [resources, setResources] = useState([]);
+  const [allResources, setAllResources] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   const fetchMyUploads = async () => {
     try {
       setLoading(true);
       const response = await api.get("/resources/my/uploads");
-      setResources(response.data.data);
+      const allRes = response.data.data;
+      setAllResources(allRes);
+      
+      // Group resources by imageGroupId
+      const deduplicated = deduplicateGroupedResources(allRes);
+      setResources(deduplicated);
       setError("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch your uploads");
@@ -20,20 +27,82 @@ const MyUploads = () => {
     }
   };
 
+  // Deduplicate grouped photos - show only one row per group
+  const deduplicateGroupedResources = (resourcesList) => {
+    const seen = new Set();
+    return resourcesList.filter((resource) => {
+      // If it has an imageGroupId and we've already seen this group, skip it
+      if (resource.imageGroupId) {
+        if (seen.has(resource.imageGroupId)) {
+          return false;
+        }
+        seen.add(resource.imageGroupId);
+      }
+      return true;
+    });
+  };
+
   useEffect(() => {
     fetchMyUploads();
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this resource?")) {
+    const resource = allResources.find((r) => r._id === id);
+    
+    if (!resource) {
+      alert("Resource not found");
+      return;
+    }
+
+    // If it's a grouped image, confirm deletion of entire group
+    let confirmMessage = "Are you sure you want to delete this resource?";
+    if (resource.imageGroupId) {
+      const groupCount = allResources.filter(
+        (r) => r.imageGroupId === resource.imageGroupId
+      ).length;
+      confirmMessage = `This will delete ${groupCount} image${
+        groupCount !== 1 ? "s" : ""
+      } in this group. Continue?`;
+    }
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
-      await api.delete(`/resources/${id}`);
-      setResources(resources.filter((r) => r._id !== id));
+      setDeleting(true);
+      setError("");
+
+      // If it's a grouped image, delete the entire group
+      if (resource.imageGroupId) {
+        const groupResources = allResources.filter(
+          (r) => r.imageGroupId === resource.imageGroupId
+        );
+        
+        // Delete all resources in the group concurrently
+        await Promise.all(
+          groupResources.map((res) => api.delete(`/resources/${res._id}`))
+        );
+
+        // Update local state immediately after successful deletion
+        const newAllResources = allResources.filter(
+          (r) => r.imageGroupId !== resource.imageGroupId
+        );
+        setAllResources(newAllResources);
+        setResources(deduplicateGroupedResources(newAllResources));
+      } else {
+        // Single resource delete
+        await api.delete(`/resources/${id}`);
+        const newAllResources = allResources.filter((r) => r._id !== id);
+        setAllResources(newAllResources);
+        setResources(deduplicateGroupedResources(newAllResources));
+      }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete resource");
+      const errorMsg = err.response?.data?.message || "Failed to delete resource";
+      setError(errorMsg);
+      alert(errorMsg);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -78,6 +147,7 @@ const MyUploads = () => {
               resources={resources}
               onDelete={handleDelete}
               showActions={true}
+              isDeleting={deleting}
             />
           </div>
         ) : (

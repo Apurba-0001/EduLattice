@@ -1,45 +1,69 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import api from "../utils/api";
 
-const ResourceTable = ({ resources, onDelete, showActions = true }) => {
+const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = false }) => {
   const { isAdmin } = useAuth();
   const [selectedResource, setSelectedResource] = useState(null);
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [mobileActionPopup, setMobileActionPopup] = useState(null);
+  const [groupCounts, setGroupCounts] = useState({});
 
-  const handleDownload = (resource) => {
-    try {
-      let downloadUrl = "";
-      let fileName = resource.fileName || resource.title || "download";
-
-      if (resource.fileType === "image" && resource.fileUrl) {
-        const cloudinaryUrl = new URL(resource.fileUrl);
-        const pathParts = cloudinaryUrl.pathname.split("/");
-        const uploadIndex = pathParts.indexOf("upload");
-
-        if (uploadIndex !== -1) {
-          pathParts.splice(uploadIndex + 1, 0, "fl_attachment");
-          downloadUrl = cloudinaryUrl.origin + pathParts.join("/");
-        } else {
-          downloadUrl = resource.fileUrl;
-        }
-      } else if (resource.driveFileId) {
-        downloadUrl = `https://drive.google.com/uc?export=download&id=${resource.driveFileId}`;
-      } else if (resource.fileUrl) {
-        downloadUrl = resource.fileUrl;
+  // Calculate number of images in each group
+  React.useEffect(() => {
+    const counts = {};
+    resources.forEach((resource) => {
+      if (resource.imageGroupId) {
+        counts[resource.imageGroupId] = (counts[resource.imageGroupId] || 0) + 1;
       }
+    });
+    setGroupCounts(counts);
+  }, [resources]);
 
-      if (!downloadUrl) {
-        alert(
-          "Download URL not available for this file. Please contact support.",
-        );
+  const handleDownload = async (resource) => {
+    try {
+      if (!resource._id) {
+        alert("Resource ID not found");
         return;
       }
 
-      window.open(downloadUrl, "_blank", "noopener=yes");
+      const fileName = resource.fileName || resource.title || "download";
+
+      // Check if this is a grouped image - if so, download the entire group as zip
+      if (resource.imageGroupId) {
+        console.log(`📦 Downloading grouped images with groupId: ${resource.imageGroupId}`);
+        const response = await api.get(`/resources/${resource._id}/download-group`, {
+          responseType: "blob",
+        });
+
+        // Create blob URL and download zip
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${resource.title || "images"}_group.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // Single file download
+        const response = await api.get(`/resources/${resource._id}/download`, {
+          responseType: "blob",
+        });
+
+        // Create blob URL and download
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
     } catch (error) {
       console.error("Download error:", error);
-      alert("Failed to download file");
+      alert("Failed to download file. Please try again.");
     }
   };
 
@@ -51,6 +75,8 @@ const ResourceTable = ({ resources, onDelete, showActions = true }) => {
         return "📊";
       case "doc":
         return "📝";
+      case "excel":
+        return "📊";
       case "image":
         return "🖼️";
       default:
@@ -66,11 +92,26 @@ const ResourceTable = ({ resources, onDelete, showActions = true }) => {
         return "bg-orange-100 text-orange-700";
       case "doc":
         return "bg-blue-100 text-blue-700";
+      case "excel":
+        return "bg-green-100 text-green-700";
       case "image":
         return "bg-green-100 text-green-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
+  };
+
+  // Calculate total size for grouped resources
+  const getGroupTotalSize = (groupId) => {
+    if (!groupId) return 0;
+    return resources
+      .filter((r) => r.imageGroupId === groupId)
+      .reduce((total, r) => total + (r.fileSize || 0), 0);
+  };
+
+  const getGroupFileCount = (groupId) => {
+    if (!groupId) return 1;
+    return resources.filter((r) => r.imageGroupId === groupId).length;
   };
 
   const formatDate = (date) => {
@@ -144,10 +185,15 @@ const ResourceTable = ({ resources, onDelete, showActions = true }) => {
                   >
                     {/* Title */}
                     <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">
-                      <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                      <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-wrap">
                         <span className="line-clamp-2 overflow-hidden">
                           {resource.title}
                         </span>
+                        {resource.imageGroupId && (
+                          <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0">
+                            📦 x{groupCounts[resource.imageGroupId] || 1}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -195,11 +241,16 @@ const ResourceTable = ({ resources, onDelete, showActions = true }) => {
                           {onDelete && (
                             <button
                               onClick={() => onDelete(resource._id)}
-                              className="px-2 sm:px-3 py-2 bg-red-100 text-red-700 font-bold rounded-lg hover:bg-red-200 transition-all duration-300 active:scale-95 text-xs sm:text-sm whitespace-nowrap min-h-10 sm:min-h-10 shadow-md"
+                              disabled={isDeleting}
+                              className={`px-2 sm:px-3 py-2 font-bold rounded-lg transition-all duration-300 active:scale-95 text-xs sm:text-sm whitespace-nowrap min-h-10 sm:min-h-10 shadow-md ${
+                                isDeleting
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                                  : "bg-red-100 text-red-700 hover:bg-red-200"
+                              }`}
                               title="Delete resource"
                             >
                               <span className="hidden sm:inline">
-                                🗑️ Delete
+                                {isDeleting ? "⏳ Deleting..." : "🗑️ Delete"}
                               </span>
                               <span className="sm:hidden">🗑️</span>
                             </button>
@@ -223,9 +274,16 @@ const ResourceTable = ({ resources, onDelete, showActions = true }) => {
             <div className="sticky top-0 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 sm:p-4 md:p-6 flex justify-between items-start gap-2 sm:gap-3">
               <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-base sm:text-lg md:text-2xl font-bold break-words line-clamp-3">
-                    {selectedResource.title}
-                  </h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg md:text-2xl font-bold break-words line-clamp-3">
+                      {selectedResource.title}
+                    </h2>
+                    {selectedResource.imageGroupId && (
+                      <span className="inline-block px-2 py-1 bg-white/30 text-white rounded-full text-xs font-bold whitespace-nowrap">
+                        📦 {groupCounts[selectedResource.imageGroupId] || 1} images
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button
@@ -327,9 +385,35 @@ const ResourceTable = ({ resources, onDelete, showActions = true }) => {
                     <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
                       📦 File Size:
                     </span>
-                    <p className="font-semibold text-xs sm:text-sm text-gray-900">
-                      {(selectedResource.fileSize / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                    <div className="text-right">
+                      {selectedResource.imageGroupId ? (
+                        <div className="space-y-1">
+                          <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                            {(
+                              getGroupTotalSize(selectedResource.imageGroupId) /
+                              1024 /
+                              1024
+                            ).toFixed(2)}{" "}
+                            MB
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {getGroupFileCount(selectedResource.imageGroupId)}{" "}
+                            file{
+                              getGroupFileCount(
+                                selectedResource.imageGroupId
+                              ) !== 1
+                                ? "s"
+                                : ""
+                            }
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                          {(selectedResource.fileSize / 1024 / 1024).toFixed(2)}{" "}
+                          MB
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="border-t border-gray-200 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                     <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
@@ -405,11 +489,16 @@ const ResourceTable = ({ resources, onDelete, showActions = true }) => {
                     onDelete(mobileActionPopup._id);
                     setMobileActionPopup(null);
                   }}
-                  className="w-full px-4 py-3 bg-red-100 text-red-700 font-bold rounded-lg hover:bg-red-200 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 shadow-md"
+                  disabled={isDeleting}
+                  className={`w-full px-4 py-3 font-bold rounded-lg transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 shadow-md ${
+                    isDeleting
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                      : "bg-red-100 text-red-700 hover:bg-red-200"
+                  }`}
                   title="Delete resource"
                 >
                   <span className="text-xl">🗑️</span>
-                  <span>Delete</span>
+                  <span>{isDeleting ? "Deleting..." : "Delete"}</span>
                 </button>
               )}
             </div>
