@@ -11,19 +11,19 @@ const __dirname = path.dirname(__filename);
 // Load environment variables FIRST before any other imports
 import dotenv from "dotenv";
 const envPath = path.join(__dirname, ".env");
-console.log("Loading .env from:", envPath);
+if (process.env.NODE_ENV === "development") {
+  console.log("[DEV] Loading environment configuration...");
+}
 const dotenvResult = dotenv.config({ path: envPath });
-console.log(
-  "dotenv config result:",
-  dotenvResult.error ? dotenvResult.error.message : "Success",
-);
-console.log(
-  "CLOUDINARY_CLOUD_NAME from process.env:",
-  process.env.CLOUDINARY_CLOUD_NAME,
-);
+if (dotenvResult.error && process.env.NODE_ENV === "development") {
+  console.log("[DEV] No .env file found, using environment variables.");
+}
 
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
@@ -34,7 +34,22 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Middleware
+// ========== SECURITY MIDDLEWARE ==========
+
+// 1. Helmet for security headers
+app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  }),
+);
+
+// 2. CORS configuration
 app.use(
   cors({
     origin:
@@ -48,14 +63,30 @@ app.use(
           ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   }),
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 3. Data sanitization against NoSQL injection
+app.use(
+  mongoSanitize({
+    replaceWith: "_",
+    onSanitize: ({ req, key }) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`[SECURITY] Potentially dangerous key detected: ${key}`);
+      }
+    },
+  }),
+);
 
-// Routes
+// 4. Cookie parser for secure token handling
+app.use(cookieParser());
+
+// 5. Request size limits
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// ========== ROUTES ==========
 app.use("/api/auth", authRoutes);
 app.use("/api/resources", resourceRoutes);
 
@@ -83,7 +114,15 @@ app.get("/", (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  // Only log to console in development
+  if (process.env.NODE_ENV === "development") {
+    console.error("[ERROR]", err.stack);
+  } else {
+    // Production: Log only high-level info (timestamp, message, code)
+    console.error(
+      `[ERROR] ${new Date().toISOString()} - ${err.code || "UNKNOWN"}`,
+    );
+  }
 
   // Multer errors
   if (err.code === "LIMIT_FILE_SIZE") {
@@ -100,9 +139,23 @@ app.use((err, req, res, next) => {
     });
   }
 
+  // CSRF Token error
+  if (err.code === "EBADCSRFTOKEN") {
+    return res.status(403).json({
+      success: false,
+      message: "Invalid security token. Please try again.",
+    });
+  }
+
+  // In production, don't expose error messages
+  const message =
+    process.env.NODE_ENV === "production"
+      ? "An error occurred. Please try again."
+      : err.message || "Internal server error";
+
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal server error",
+    message: message,
   });
 });
 
@@ -118,7 +171,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(
-    `Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
+    `[SERVER] Running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
   );
 });
 

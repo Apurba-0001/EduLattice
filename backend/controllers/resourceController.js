@@ -377,7 +377,9 @@ export const uploadResource = async (req, res) => {
           : "File uploaded successfully",
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Upload error:", error);
+    }
     res.status(500).json({
       success: false,
       message: error.message || "Server error during file upload",
@@ -402,6 +404,15 @@ export const getResources = async (req, res) => {
       includeArchived = false,
     } = req.query;
 
+    // Validate and sanitize pagination parameters
+    let pageNum = Math.max(1, parseInt(page) || 1);
+    let limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10)); // Max 100 items per page
+
+    // Validate sort parameters
+    const allowedSortFields = ["createdAt", "title", "views"];
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+    const sortVal = sortOrder === "asc" ? 1 : -1;
+
     // Build query
     let query = {};
 
@@ -411,11 +422,21 @@ export const getResources = async (req, res) => {
     }
 
     if (subject) {
-      query.subject = { $regex: subject, $options: "i" };
+      // Escape regex special characters to prevent ReDoS attacks
+      const escapedSubject = String(subject).replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&",
+      );
+      query.subject = { $regex: escapedSubject, $options: "i" };
     }
 
     if (semester) {
-      query.semester = { $regex: semester, $options: "i" };
+      // Escape regex special characters to prevent ReDoS attacks
+      const escapedSemester = String(semester).replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&",
+      );
+      query.semester = { $regex: escapedSemester, $options: "i" };
     }
 
     if (resourceType) {
@@ -423,32 +444,30 @@ export const getResources = async (req, res) => {
     }
 
     if (keyword) {
+      // Escape regex special characters to prevent NoSQL injection
+      const escapedKeyword = String(keyword).replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&",
+      );
       query.$or = [
-        { title: { $regex: keyword, $options: "i" } },
-        { description: { $regex: keyword, $options: "i" } },
-        { subject: { $regex: keyword, $options: "i" } },
+        { title: { $regex: escapedKeyword, $options: "i" } },
+        { description: { $regex: escapedKeyword, $options: "i" } },
+        { subject: { $regex: escapedKeyword, $options: "i" } },
       ];
     }
 
     // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     // Build sort object
     const sortObj = {};
-    const sortField =
-      sortBy === "createdAt"
-        ? "createdAt"
-        : sortBy === "title"
-          ? "title"
-          : "views";
-    const sortVal = sortOrder === "asc" ? 1 : -1;
     sortObj[sortField] = sortVal;
 
     // Execute query
     const resources = await Resource.find(query)
       .populate("uploadedBy", "name email")
       .sort(sortObj)
-      .limit(parseInt(limit))
+      .limit(limitNum)
       .skip(skip);
 
     // Get total count
@@ -458,12 +477,14 @@ export const getResources = async (req, res) => {
       success: true,
       count: resources.length,
       total,
-      page: parseInt(page),
-      totalPages: Math.ceil(total / parseInt(limit)),
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
       data: resources,
     });
   } catch (error) {
-    console.error("Get resources error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Get resources error:", error);
+    }
     res.status(500).json({
       success: false,
       message: "Server error while fetching resources",
@@ -602,7 +623,9 @@ export const updateResource = async (req, res) => {
       data: updatedResource,
     });
   } catch (error) {
-    console.error("Update error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Update error:", error);
+    }
     res.status(500).json({
       success: false,
       message: error.message || "Server error during update",
@@ -751,7 +774,9 @@ export const deleteResource = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Delete error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("❌ Delete error:", error);
+    }
     res.status(500).json({
       success: false,
       message: error.message || "Server error while deleting resource",
@@ -840,7 +865,9 @@ export const trackView = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Track view error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Track view error:", error);
+    }
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -907,7 +934,9 @@ export const downloadResource = async (req, res) => {
           }
         });
     } catch (err) {
-      console.error("Error downloading file:", err.message);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error downloading file:", err.message);
+      }
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
@@ -916,7 +945,9 @@ export const downloadResource = async (req, res) => {
       }
     }
   } catch (error) {
-    console.error("Download error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Download error:", error);
+    }
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -1040,11 +1071,15 @@ export const downloadGroupedResources = async (req, res) => {
 
     // Finalize the archive
     await archive.finalize();
-    console.log(
-      `✅ Group download completed for ${groupedResources.length} images`,
-    );
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `✅ Group download completed for ${groupedResources.length} images`,
+      );
+    }
   } catch (error) {
-    console.error("Group download error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Group download error:", error);
+    }
     if (!res.headersSent) {
       res.status(500).json({
         success: false,

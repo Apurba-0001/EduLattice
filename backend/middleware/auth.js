@@ -1,11 +1,41 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+// Session timeout: 20 minutes of inactivity (in milliseconds)
+const SESSION_TIMEOUT = 20 * 60 * 1000;
+
+// Helper to generate token with current activity timestamp
+const generateToken = (userId) => {
+  return jwt.sign(
+    { id: userId, lastActivity: Date.now() },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1h",
+    },
+  );
+};
+
+// Helper to set auth cookie
+const setAuthCookie = (res, token) => {
+  res.cookie("authToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 60 * 60 * 1000, // 1 hour
+    path: "/",
+  });
+};
+
 export const protect = async (req, res, next) => {
   try {
     let token;
 
-    if (
+    // Priority 1: Check httpOnly cookie (safer method)
+    if (req.cookies && req.cookies.authToken) {
+      token = req.cookies.authToken;
+    }
+    // Priority 2: Check Authorization header (for backward compatibility)
+    else if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
@@ -21,6 +51,28 @@ export const protect = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Check for session timeout due to inactivity (20 minutes)
+      if (decoded.lastActivity) {
+        const now = Date.now();
+        const lastActivity = decoded.lastActivity;
+        const inactivityDuration = now - lastActivity;
+
+        // If inactive for more than 20 minutes, logout user
+        if (inactivityDuration > SESSION_TIMEOUT) {
+          res.clearCookie("authToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            path: "/",
+          });
+          return res.status(401).json({
+            success: false,
+            message: "Session expired due to inactivity. Please login again.",
+          });
+        }
+      }
+
       req.user = await User.findById(decoded.id).select("-password");
 
       if (!req.user) {
@@ -29,6 +81,17 @@ export const protect = async (req, res, next) => {
           message: "User not found",
         });
       }
+
+      // Generate and set new token with updated lastActivity
+      // This resets the inactivity timer on every request
+      const newToken = generateToken(req.user._id);
+      setAuthCookie(res, newToken);
+
+      // Update last activity in database (non-blocking)
+      req.user.lastActivity = new Date();
+      req.user.save().catch((err) => {
+        console.error("Error updating lastActivity:", err);
+      });
 
       next();
     } catch (error) {
@@ -61,7 +124,7 @@ export const authorizeResourceAccess = async (req, res, next) => {
     const Resource = (await import("../models/Resource.js")).default;
     const resource = await Resource.findById(req.params.id).populate(
       "uploadedBy",
-      "_id name email isAdmin"
+      "_id name email isAdmin",
     );
 
     if (!resource) {

@@ -1,10 +1,23 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// Generate JWT Token
+// Generate JWT Token with short expiration for security
+// Expires in 1 hour - requires client to implement refresh token mechanism
+// Includes lastActivity timestamp for inactivity timeout (20 minutes)
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
+  return jwt.sign({ id, lastActivity: Date.now() }, process.env.JWT_SECRET, {
+    expiresIn: "1h",
+  });
+};
+
+// Helper function to set authentication cookie
+const setAuthCookie = (res, token) => {
+  res.cookie("authToken", token, {
+    httpOnly: true, // Prevents JavaScript from accessing the token
+    secure: process.env.NODE_ENV === "production", // Only send over HTTPS in production
+    sameSite: "strict", // CSRF protection
+    maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
+    path: "/",
   });
 };
 
@@ -37,11 +50,15 @@ export const register = async (req, res) => {
       name,
       email,
       password,
+      lastActivity: new Date(),
       isAdmin: isAdmin || false,
     });
 
     // Generate token
     const token = generateToken(user._id);
+
+    // Set authentication cookie (httpOnly for security)
+    setAuthCookie(res, token);
 
     res.status(201).json({
       success: true,
@@ -51,11 +68,13 @@ export const register = async (req, res) => {
         email: user.email,
         isAdmin: user.isAdmin,
         createdAt: user.createdAt,
-        token,
       },
+      message: "User registered successfully",
     });
   } catch (error) {
-    console.error("Registration error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Registration error:", error);
+    }
     res.status(500).json({
       success: false,
       message: error.message || "Server error during registration",
@@ -98,8 +117,15 @@ export const login = async (req, res) => {
       });
     }
 
+    // Update last activity on successful login
+    user.lastActivity = new Date();
+    await user.save();
+
     // Generate token
     const token = generateToken(user._id);
+
+    // Set authentication cookie (httpOnly for security)
+    setAuthCookie(res, token);
 
     res.status(200).json({
       success: true,
@@ -109,11 +135,13 @@ export const login = async (req, res) => {
         email: user.email,
         isAdmin: user.isAdmin,
         createdAt: user.createdAt,
-        token,
       },
+      message: "Login successful",
     });
   } catch (error) {
-    console.error("Login error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Login error:", error);
+    }
     res.status(500).json({
       success: false,
       message: "Server error during login",
@@ -191,10 +219,40 @@ export const deleteUser = async (req, res) => {
       message: "User deleted successfully",
     });
   } catch (error) {
-    console.error("Delete user error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Delete user error:", error);
+    }
     res.status(500).json({
       success: false,
       message: "Server error",
+    });
+  }
+};
+
+// @desc    Logout user (clear httpOnly cookie)
+// @route   POST /api/auth/logout
+// @access  Private
+export const logout = async (req, res) => {
+  try {
+    // Clear the httpOnly cookie
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("Logout error:", error);
+    }
+    res.status(500).json({
+      success: false,
+      message: "Server error during logout",
     });
   }
 };

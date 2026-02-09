@@ -15,22 +15,45 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Initialize on mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
 
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        localStorage.removeItem("user");
+      }
     }
     setLoading(false);
+  }, []);
+
+  // Logout when browser closes
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      // Clear auth data when user closes the browser
+      try {
+        await api.post("/auth/logout");
+      } catch (error) {
+        console.error("Logout on close error:", error);
+      } finally {
+        localStorage.removeItem("user");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, []);
 
   const login = async (email, password) => {
     try {
       const response = await api.post("/auth/login", { email, password });
-      const { token, ...userData } = response.data.data;
+      const userData = response.data.data;
 
-      localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
 
@@ -53,9 +76,8 @@ export const AuthProvider = ({ children }) => {
         password,
         role,
       });
-      const { token, ...userData } = response.data.data;
+      const userData = response.data.data;
 
-      localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
 
@@ -68,10 +90,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
+  const logout = async () => {
+    try {
+      // Call logout endpoint to clear httpOnly cookie on server
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear user data from localStorage
+      localStorage.removeItem("user");
+      setUser(null);
+    }
   };
 
   const value = {

@@ -107,7 +107,7 @@ A full-stack web application for sharing and managing educational resources with
 ### Deployment
 
 - **Backend**: Render.com
-- **Frontend**: Vercel
+- **Frontend**: Render.com
 - **Database**: MongoDB Atlas (Cloud)
 - **File Storage**: Cloudinary CDN
 
@@ -338,35 +338,42 @@ npm run preview
 3. **Add Environment Variables**
    - Go to Environment tab
    - Add all variables from `.env` file
-   - For `FRONTEND_URL`, use your Vercel deployment URL
+   - For `FRONTEND_URL`, use your Render frontend deployment URL
 
 4. **Deploy**
    - Render will automatically deploy your backend
    - Note the deployment URL (e.g., `https://edulattice-api.onrender.com`)
 
-### Frontend Deployment (Vercel)
+### Frontend Deployment (Render)
 
-1. **Create account** on [Vercel](https://vercel.com/)
+1. **Create account** on [Render](https://render.com/) (same as backend)
 
-2. **Import Project**
-   - Connect GitHub repository
-   - Select root directory or `frontend` folder
-   - Framework Preset: Vite
+2. **Create new Web Service**
+   - Connect your GitHub repository
+   - Select `frontend` directory
+   - Configure build settings:
+     ```
+     Build Command: npm install && npm run build
+     Start Command: npm run preview
+     ```
+   - Or use with a static site if preferred (publish `dist` folder)
 
 3. **Configure Environment Variables**
-
-   ```
-   VITE_API_URL=https://your-backend-url.onrender.com/api
-   ```
+   - Go to Environment tab
+   - Add environment variables:
+     ```
+     VITE_API_URL=https://your-backend-url.onrender.com/api
+     ```
 
 4. **Deploy**
-   - Vercel will automatically build and deploy
-   - Your app will be live at `https://your-app.vercel.app`
+   - Render will automatically build and deploy
+   - Your frontend will be live at `https://your-frontend.onrender.com`
+   - Note: Free tier services may take 15-30 seconds to spin up on first request
 
 5. **Update Backend CORS**
-   - Go back to Render environment variables
-   - Update `FRONTEND_URL` with your Vercel URL
-   - Redeploy backend
+   - Go back to Render backend environment variables
+   - Update `FRONTEND_URL` with your Render frontend URL (e.g., `https://your-frontend.onrender.com`)
+   - Redeploy backend for CORS changes to take effect
 
 ### Database (MongoDB Atlas)
 
@@ -805,7 +812,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Cloudinary for excellent file storage and CDN
 - React team for outstanding JavaScript framework
 - Node.js and Express community
-- Render and Vercel for seamless deployment platforms
+- Render for seamless full-stack deployment platform
 
 ## 📞 Support & Issues
 

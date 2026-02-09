@@ -4,6 +4,7 @@ import api from "../utils/api";
 import { SEMESTERS, getSubjectsBySemester } from "../constants/curriculum";
 import { validateFiles } from "../utils/fileValidation";
 import { ERROR_MESSAGES } from "../constants/errorMessages";
+import ErrorModal from "../components/ErrorModal";
 
 const Upload = () => {
   const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ const Upload = () => {
   const [success, setSuccess] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [subjectOptions, setSubjectOptions] = useState([]);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const navigate = useNavigate();
@@ -56,6 +58,7 @@ const Upload = () => {
     // Validate files
     const validation = validateFiles(filesArray);
     if (!validation.isValid) {
+      setIsErrorModalOpen(true);
       setError(validation.error);
       setFiles([]);
       e.target.value = "";
@@ -92,6 +95,7 @@ const Upload = () => {
     const validation = validateFiles(filesArray);
     if (!validation.isValid) {
       setError(validation.error);
+      setIsErrorModalOpen(true);
       setFiles([]);
       return;
     }
@@ -115,6 +119,7 @@ const Upload = () => {
 
     if (!files || files.length === 0) {
       setError(ERROR_MESSAGES.NO_FILES);
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -160,7 +165,10 @@ const Upload = () => {
         navigate("/my-uploads");
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || ERROR_MESSAGES.UPLOAD_FAILED);
+      const errorMessage =
+        err.response?.data?.message || ERROR_MESSAGES.UPLOAD_FAILED;
+      setError(errorMessage);
+      setIsErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -181,15 +189,6 @@ const Upload = () => {
 
         {/* Upload Form Card */}
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-xl p-6 sm:p-8 lg:p-10 animate-slideUp">
-          {/* Error Alert */}
-          {error && (
-            <div className="mb-6 sm:mb-7 p-4 sm:p-5 bg-red-50 border-l-4 border-red-500 rounded-xl animate-slideDown">
-              <p className="text-red-700 font-medium text-sm sm:text-base leading-relaxed">
-                ⚠️ {error}
-              </p>
-            </div>
-          )}
-
           {/* Success Alert */}
           {success && (
             <div className="mb-6 sm:mb-7 p-4 sm:p-5 bg-green-50 border-l-4 border-green-500 rounded-xl animate-slideDown">
@@ -198,6 +197,13 @@ const Upload = () => {
               </p>
             </div>
           )}
+
+          {/* Error Modal */}
+          <ErrorModal
+            isOpen={isErrorModalOpen}
+            message={error}
+            onClose={() => setIsErrorModalOpen(false)}
+          />
 
           <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-7">
             {/* Title Field */}
