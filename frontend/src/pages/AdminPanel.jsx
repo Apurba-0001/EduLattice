@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../utils/api";
 import ResourceTable from "../components/ResourceTable";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 const AdminPanel = () => {
   const [resources, setResources] = useState([]);
@@ -9,6 +10,12 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("stats");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    resourceId: null,
+    resourceName: "",
+    isDeleting: false,
+  });
 
   useEffect(() => {
     fetchData();
@@ -39,16 +46,41 @@ const AdminPanel = () => {
   };
 
   const handleDeleteResource = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this resource?")) {
-      return;
+    const resource = resources.find((r) => r._id === id);
+    if (resource) {
+      setDeleteModal({
+        isOpen: true,
+        resourceId: id,
+        resourceName: resource.title,
+        isDeleting: false,
+      });
     }
+  };
 
+  const handleDeleteConfirm = async () => {
     try {
-      await api.delete(`/resources/${id}`);
-      setResources(resources.filter((r) => r._id !== id));
+      setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+      await api.delete(`/resources/${deleteModal.resourceId}`);
+      setResources(resources.filter((r) => r._id !== deleteModal.resourceId));
+      setDeleteModal({
+        isOpen: false,
+        resourceId: null,
+        resourceName: "",
+        isDeleting: false,
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete resource");
+      setError(err.response?.data?.message || "Failed to delete resource");
+      setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({
+      isOpen: false,
+      resourceId: null,
+      resourceName: "",
+      isDeleting: false,
+    });
   };
 
   return (
@@ -294,6 +326,16 @@ const AdminPanel = () => {
           </>
         )}
       </div>
+
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        title="Delete Resource"
+        message="Are you sure you want to delete this resource? This action cannot be undone."
+        itemName={deleteModal.resourceName}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        isLoading={deleteModal.isDeleting}
+      />
     </div>
   );
 };

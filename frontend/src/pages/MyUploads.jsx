@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../utils/api";
 import ResourceTable from "../components/ResourceTable";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 const MyUploads = () => {
   const [resources, setResources] = useState([]);
@@ -8,6 +9,14 @@ const MyUploads = () => {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    resourceId: null,
+    resourceName: "",
+    groupCount: 0,
+    isGroupDeletion: false,
+    isDeleting: false,
+  });
 
   const fetchMyUploads = async () => {
     try {
@@ -15,7 +24,7 @@ const MyUploads = () => {
       const response = await api.get("/resources/my/uploads");
       const allRes = response.data.data;
       setAllResources(allRes);
-      
+
       // Group resources by imageGroupId
       const deduplicated = deduplicateGroupedResources(allRes);
       setResources(deduplicated);
@@ -48,62 +57,97 @@ const MyUploads = () => {
 
   const handleDelete = async (id) => {
     const resource = allResources.find((r) => r._id === id);
-    
+
     if (!resource) {
-      alert("Resource not found");
+      setError("Resource not found");
       return;
     }
 
     // If it's a grouped image, confirm deletion of entire group
-    let confirmMessage = "Are you sure you want to delete this resource?";
+    let groupCount = 1;
+    let isGroupDeletion = false;
+
     if (resource.imageGroupId) {
-      const groupCount = allResources.filter(
-        (r) => r.imageGroupId === resource.imageGroupId
+      groupCount = allResources.filter(
+        (r) => r.imageGroupId === resource.imageGroupId,
       ).length;
-      confirmMessage = `This will delete ${groupCount} image${
-        groupCount !== 1 ? "s" : ""
-      } in this group. Continue?`;
+      isGroupDeletion = true;
     }
 
-    if (!window.confirm(confirmMessage)) {
+    setDeleteModal({
+      isOpen: true,
+      resourceId: id,
+      resourceName: resource.title,
+      groupCount,
+      isGroupDeletion,
+      isDeleting: false,
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const resource = allResources.find((r) => r._id === deleteModal.resourceId);
+
+    if (!resource) {
+      setError("Resource not found");
       return;
     }
 
     try {
-      setDeleting(true);
+      setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
       setError("");
 
       // If it's a grouped image, delete the entire group
       if (resource.imageGroupId) {
         const groupResources = allResources.filter(
-          (r) => r.imageGroupId === resource.imageGroupId
+          (r) => r.imageGroupId === resource.imageGroupId,
         );
-        
+
         // Delete all resources in the group concurrently
         await Promise.all(
-          groupResources.map((res) => api.delete(`/resources/${res._id}`))
+          groupResources.map((res) => api.delete(`/resources/${res._id}`)),
         );
 
         // Update local state immediately after successful deletion
         const newAllResources = allResources.filter(
-          (r) => r.imageGroupId !== resource.imageGroupId
+          (r) => r.imageGroupId !== resource.imageGroupId,
         );
         setAllResources(newAllResources);
         setResources(deduplicateGroupedResources(newAllResources));
       } else {
         // Single resource delete
-        await api.delete(`/resources/${id}`);
-        const newAllResources = allResources.filter((r) => r._id !== id);
+        await api.delete(`/resources/${deleteModal.resourceId}`);
+        const newAllResources = allResources.filter(
+          (r) => r._id !== deleteModal.resourceId,
+        );
         setAllResources(newAllResources);
         setResources(deduplicateGroupedResources(newAllResources));
       }
+
+      setDeleteModal({
+        isOpen: false,
+        resourceId: null,
+        resourceName: "",
+        groupCount: 0,
+        isGroupDeletion: false,
+        isDeleting: false,
+      });
     } catch (err) {
-      const errorMsg = err.response?.data?.message || "Failed to delete resource";
+      const errorMsg =
+        err.response?.data?.message || "Failed to delete resource";
       setError(errorMsg);
-      alert(errorMsg);
-    } finally {
-      setDeleting(false);
+      setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({
+      isOpen: false,
+      resourceId: null,
+      resourceName: "",
+      groupCount: 0,
+      isGroupDeletion: false,
+      isDeleting: false,
+    });
   };
 
   return (
@@ -162,13 +206,29 @@ const MyUploads = () => {
             </p>
             <a
               href="/upload"
-              className="inline-block px-8 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:shadow-lg active:scale-95 shadow-lg text-sm sm:text-base min-h-[48px] flex items-center justify-center"
+              className="inline-flex px-8 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:shadow-lg active:scale-95 shadow-lg text-sm sm:text-base min-h-[48px] items-center justify-center"
             >
               ➕ Upload Your First Resource
             </a>
           </div>
         )}
       </div>
+
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        title="Delete Resource"
+        message={
+          deleteModal.isGroupDeletion
+            ? `This will delete ${deleteModal.groupCount} image${
+                deleteModal.groupCount !== 1 ? "s" : ""
+              } in this group. Continue?`
+            : "Are you sure you want to delete this resource? This action cannot be undone."
+        }
+        itemName={deleteModal.resourceName}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        isLoading={deleteModal.isDeleting}
+      />
     </div>
   );
 };

@@ -9,6 +9,7 @@ import {
   getResourceStats,
   downloadResource,
   downloadGroupedResources,
+  trackView,
 } from "../controllers/resourceController.js";
 import {
   protect,
@@ -23,6 +24,7 @@ const router = express.Router();
 router.post("/", protect, upload.array("file", 5), uploadResource);
 router.get("/", protect, getResources);
 router.get("/my/uploads", protect, getMyUploads);
+router.post("/:id/view", protect, trackView);
 router.get("/:id/download-group", protect, downloadGroupedResources);
 router.get("/:id/download", protect, downloadResource);
 router.get("/stats/overview", protect, adminOnly, getResourceStats);

@@ -20,12 +20,7 @@ const ResourceCard = ({ resource, onDelete, showActions = true }) => {
           downloadUrl = resource.fileUrl;
         }
       }
-      // For documents: use Google Drive file ID
-      else if (resource.driveFileId) {
-        // Create a link to download from Google Drive
-        downloadUrl = `https://drive.google.com/uc?export=download&id=${resource.driveFileId}`;
-      }
-      // Fallback: use fileUrl for any other file type
+      // For documents: use Cloudinary URL directly
       else if (resource.fileUrl) {
         downloadUrl = resource.fileUrl;
       }

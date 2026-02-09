@@ -23,6 +23,25 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
+  // Filter grouped files to show only one row per group
+  const getUniqueResources = (resourceList) => {
+    const seenGroups = new Set();
+    return resourceList.filter((resource) => {
+      // If it's a grouped file (has imageGroupId)
+      if (resource.imageGroupId) {
+        // If we've already seen this group, skip it
+        if (seenGroups.has(resource.imageGroupId)) {
+          return false;
+        }
+        // Mark this group as seen
+        seenGroups.add(resource.imageGroupId);
+        return true;
+      }
+      // Non-grouped files always show
+      return true;
+    });
+  };
+
   const fetchResources = async () => {
     try {
       setLoading(true);
@@ -126,7 +145,7 @@ const Dashboard = () => {
                 style={{ animationDelay: "0.05s" }}
               >
                 <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-2 sm:mb-3 uppercase tracking-wide">
-                  📅 Semester
+                  Semester
                 </label>
                 <select
                   name="semester"
@@ -262,11 +281,14 @@ const Dashboard = () => {
           <div className="animate-fadeIn">
             <div className="mb-4 sm:mb-6 p-4 sm:p-5 bg-green-50 border-l-4 border-green-500 rounded-xl">
               <p className="text-green-700 font-semibold text-sm sm:text-base">
-                ✓ Found {resources.length} resource
-                {resources.length !== 1 ? "s" : ""}
+                ✓ Found {getUniqueResources(resources).length} resource
+                {getUniqueResources(resources).length !== 1 ? "s" : ""}
               </p>
             </div>
-            <ResourceTable resources={resources} showActions={true} />
+            <ResourceTable
+              resources={getUniqueResources(resources)}
+              showActions={true}
+            />
           </div>
         ) : (
           <div className="text-center py-16 sm:py-24 animate-slideUp">

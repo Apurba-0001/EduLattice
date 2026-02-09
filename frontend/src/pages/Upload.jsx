@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { SEMESTERS, getSubjectsBySemester } from "../constants/curriculum";
+import { validateFiles } from "../utils/fileValidation";
+import { ERROR_MESSAGES } from "../constants/errorMessages";
 
 const Upload = () => {
   const [formData, setFormData] = useState({
@@ -18,95 +20,6 @@ const Upload = () => {
   const [dragActive, setDragActive] = useState(false);
   const [subjectOptions, setSubjectOptions] = useState([]);
   const fileInputRef = useRef(null);
-
-  // Helper function to determine if file is image
-  const isImageFile = (file) => {
-    return file.type.startsWith("image/");
-  };
-
-  // Helper function to validate file type
-  const validateFileType = (file) => {
-    const allowedTypes = [
-      // PDF
-      "application/pdf",
-      // PowerPoint
-      "application/vnd.ms-powerpoint",
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      "application/vnd.oasis.opendocument.presentation",
-      "application/vnd.apple.keynote",
-      // Word
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.oasis.opendocument.text",
-      "application/vnd.apple.pages",
-      "text/plain",
-      "application/rtf",
-      // Excel
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/x-excel",
-      "application/x-msexcel",
-      "application/vnd.oasis.opendocument.spreadsheet",
-      "application/vnd.apple.numbers",
-      "text/csv",
-      // Images - Common formats
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "image/gif",
-      "image/webp",
-      "image/bmp",
-      "image/tiff",
-      "image/x-tiff",
-      "image/svg+xml",
-      // Images - Modern formats
-      "image/heic",
-      "image/heif",
-      "image/avif",
-    ];
-    return allowedTypes.includes(file.type);
-  };
-
-  // Helper function to check for dangerous file types (security)
-  const isDangerousFile = (filename) => {
-    const dangerousExtensions = [
-      // Windows executables
-      ".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".pif", ".vbs", ".vbe",
-      // Linux/Unix executables
-      ".sh", ".bash", ".ksh", ".csh", ".run", ".elf",
-      // Mac executables
-      ".app", ".dmg", ".pkg",
-      // Java
-      ".jar", ".jnlp", ".class",
-      // Archives (can contain executables)
-      ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".iso", ".cab", ".arj", ".ace",
-      // Libraries (can be dangerous)
-      ".dll", ".so", ".dylib", ".o", ".a", ".lib",
-      // Scripts (can be dangerous)
-      ".js", ".vbs", ".ps1", ".psm1", ".psd1", ".wsh",
-      // System files
-      ".sys", ".drv", ".ko", ".dbg",
-      // Office macros
-      ".docm", ".xlsm", ".pptm",
-    ];
-
-    const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
-    if (dangerousExtensions.includes(ext)) {
-      return true;
-    }
-
-    // Check for double extensions (e.g., image.jpg.exe)
-    const parts = filename.split(".");
-    if (parts.length > 2) {
-      for (let dangerous of dangerousExtensions) {
-        if (filename.toLowerCase().includes(dangerous)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  };
 
   const navigate = useNavigate();
 
@@ -140,100 +53,10 @@ const Upload = () => {
     // Convert FileList to Array
     const filesArray = Array.from(selectedFiles);
 
-    // SECURITY: Check for dangerous files
-    for (let file of filesArray) {
-      if (isDangerousFile(file.name)) {
-        setError(`File type not supported: "${file.name}"`);
-        setFiles([]);
-        e.target.value = "";
-        return;
-      }
-    }
-
-    // Validate all files
-    for (let file of filesArray) {
-      if (!validateFileType(file)) {
-        setError(
-          "Invalid file type. Allowed: PDF, PPT, PPTX, ODP, Keynote, DOC, DOCX, ODT, TXT, RTF, Pages, XLS, XLSX, ODS, CSV, Numbers, JPG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, AVIF"
-        );
-        setFiles([]);
-        e.target.value = "";
-        return;
-      }
-    }
-
-    // Determine if all files are images or all are documents
-    const allImages = filesArray.every(isImageFile);
-    const allDocuments = filesArray.every((file) => !isImageFile(file));
-
-    // Check for mixed file types
-    if (!allImages && !allDocuments) {
-      setError(
-        "Cannot upload images and documents together. Please upload them separately."
-      );
-      setFiles([]);
-      e.target.value = "";
-      return;
-    }
-
-    // Check file count limits
-    if (allImages && filesArray.length > 5) {
-      setError("Maximum 5 images can be uploaded at once");
-      setFiles([]);
-      e.target.value = "";
-      return;
-    }
-
-    if (allDocuments && filesArray.length > 1) {
-      setError("Only 1 document can be uploaded at a time");
-      setFiles([]);
-      e.target.value = "";
-      return;
-    }
-
-    // Check file sizes (individual and collective)
-    let totalSize = 0;
-    const maxIndividualImageSize = 10 * 1024 * 1024; // 10MB per image
-    const maxTotalImageSize = 5 * 10 * 1024 * 1024; // 50MB total for 5 images
-    const maxDocumentSize = 25 * 1024 * 1024; // 25MB per document
-
-    for (let file of filesArray) {
-      totalSize += file.size;
-
-      // Check individual file size
-      if (isImageFile(file) && file.size > maxIndividualImageSize) {
-        setError(
-          `Image "${file.name}" exceeds size limit. Max per image: 10MB`
-        );
-        setFiles([]);
-        e.target.value = "";
-        return;
-      } else if (!isImageFile(file) && file.size > maxDocumentSize) {
-        setError(
-          `Document "${file.name}" exceeds size limit. Max per document: 25MB`
-        );
-        setFiles([]);
-        e.target.value = "";
-        return;
-      }
-    }
-
-    // Check collective size limit
-    if (allImages && totalSize > maxTotalImageSize) {
-      const totalMB = (totalSize / (1024 * 1024)).toFixed(2);
-      setError(
-        `Total size of all images (${totalMB}MB) exceeds limit. Max: 50MB for 5 images`
-      );
-      setFiles([]);
-      e.target.value = "";
-      return;
-    }
-
-    if (allDocuments && totalSize > maxDocumentSize) {
-      const totalMB = (totalSize / (1024 * 1024)).toFixed(2);
-      setError(
-        `Document size (${totalMB}MB) exceeds limit. Max: 25MB`
-      );
+    // Validate files
+    const validation = validateFiles(filesArray);
+    if (!validation.isValid) {
+      setError(validation.error);
       setFiles([]);
       e.target.value = "";
       return;
@@ -265,92 +88,10 @@ const Upload = () => {
     // Convert FileList to Array
     const filesArray = Array.from(droppedFiles);
 
-    // SECURITY: Check for dangerous files
-    for (let file of filesArray) {
-      if (isDangerousFile(file.name)) {
-        setError(`File type not supported: "${file.name}"`);
-        setFiles([]);
-        return;
-      }
-    }
-
-    // Validate all files
-    for (let file of filesArray) {
-      if (!validateFileType(file)) {
-        setError(
-          "Invalid file type. Allowed: PDF, PPT, DOCX, XLS, XLSX, JPG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, AVIF"
-        );
-        setFiles([]);
-        return;
-      }
-    }
-
-    // Determine if all files are images or all are documents
-    const allImages = filesArray.every(isImageFile);
-    const allDocuments = filesArray.every((file) => !isImageFile(file));
-
-    // Check for mixed file types
-    if (!allImages && !allDocuments) {
-      setError(
-        "Cannot upload images and documents together. Please upload them separately."
-      );
-      setFiles([]);
-      return;
-    }
-
-    // Check file count limits
-    if (allImages && filesArray.length > 5) {
-      setError("Maximum 5 images can be uploaded at once");
-      setFiles([]);
-      return;
-    }
-
-    if (allDocuments && filesArray.length > 1) {
-      setError("Only 1 document can be uploaded at a time");
-      setFiles([]);
-      return;
-    }
-
-    // Check file sizes (individual and collective)
-    let totalSize = 0;
-    const maxIndividualImageSize = 10 * 1024 * 1024; // 10MB per image
-    const maxTotalImageSize = 5 * 10 * 1024 * 1024; // 50MB total for 5 images
-    const maxDocumentSize = 25 * 1024 * 1024; // 25MB per document
-
-    for (let file of filesArray) {
-      totalSize += file.size;
-
-      // Check individual file size
-      if (isImageFile(file) && file.size > maxIndividualImageSize) {
-        setError(
-          `Image "${file.name}" exceeds size limit. Max per image: 10MB`
-        );
-        setFiles([]);
-        return;
-      } else if (!isImageFile(file) && file.size > maxDocumentSize) {
-        setError(
-          `Document "${file.name}" exceeds size limit. Max per document: 25MB`
-        );
-        setFiles([]);
-        return;
-      }
-    }
-
-    // Check collective size limit
-    if (allImages && totalSize > maxTotalImageSize) {
-      const totalMB = (totalSize / (1024 * 1024)).toFixed(2);
-      setError(
-        `Total size of all images (${totalMB}MB) exceeds limit. Max: 50MB for 5 images`
-      );
-      setFiles([]);
-      return;
-    }
-
-    if (allDocuments && totalSize > maxDocumentSize) {
-      const totalMB = (totalSize / (1024 * 1024)).toFixed(2);
-      setError(
-        `Document size (${totalMB}MB) exceeds limit. Max: 25MB`
-      );
+    // Validate files
+    const validation = validateFiles(filesArray);
+    if (!validation.isValid) {
+      setError(validation.error);
       setFiles([]);
       return;
     }
@@ -373,7 +114,7 @@ const Upload = () => {
     e.preventDefault();
 
     if (!files || files.length === 0) {
-      setError("Please select at least one file");
+      setError(ERROR_MESSAGES.NO_FILES);
       return;
     }
 
@@ -383,12 +124,12 @@ const Upload = () => {
 
     try {
       const uploadData = new FormData();
-      
+
       // Append all files
       files.forEach((file) => {
         uploadData.append("file", file);
       });
-      
+
       // Append form fields
       uploadData.append("title", formData.title);
       uploadData.append("description", formData.description);
@@ -419,7 +160,7 @@ const Upload = () => {
         navigate("/my-uploads");
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to upload resource(s)");
+      setError(err.response?.data?.message || ERROR_MESSAGES.UPLOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -519,7 +260,7 @@ const Upload = () => {
                 style={{ animationDelay: "0.1s" }}
               >
                 <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-2 sm:mb-3 uppercase tracking-wide">
-                  � Semester *
+                  Semester *
                 </label>
                 <select
                   name="semester"
@@ -619,16 +360,11 @@ const Upload = () => {
                     📁
                   </span>
                   <p className="text-base sm:text-lg text-gray-800 font-bold mb-2 sm:mb-3">
-                    Drag and drop your files
+                    Drag and drop files or click to browse
                   </p>
-                  <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
-                    or click to browse
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                    Docs: PDF, Office (PPT, DOC, XLS), OpenOffice (ODP, ODT, ODS), Apple (Keynote, Pages, Numbers), TXT, RTF, CSV (max 25MB) | Images: JPG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, AVIF (max 10MB)
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                    Images: max 5 per upload (50MB total) | Documents: 1 per upload
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Documents (PDF, PPTX, DOCX) up to 25MB | Images (JPG, PNG,
+                    etc) up to 10MB
                   </p>
                 </div>
               </div>
@@ -659,9 +395,11 @@ const Upload = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const newFiles = files.filter((_, i) => i !== index);
+                            const newFiles = files.filter(
+                              (_, i) => i !== index,
+                            );
                             setFiles(newFiles);
-                            
+
                             // Update file input
                             if (fileInputRef.current) {
                               const dataTransfer = new DataTransfer();
@@ -716,7 +454,9 @@ const Upload = () => {
                   <>
                     <span>📤</span>
                     <span>
-                      Upload {files.length > 0 && `(${files.length} file${files.length !== 1 ? "s" : ""})`}
+                      Upload{" "}
+                      {files.length > 0 &&
+                        `(${files.length} file${files.length !== 1 ? "s" : ""})`}
                     </span>
                   </>
                 )}
@@ -728,9 +468,17 @@ const Upload = () => {
           <div className="mt-8 sm:mt-10 p-4 sm:p-5 bg-blue-50 border-l-4 border-blue-500 rounded-xl">
             <p className="text-blue-800 text-xs sm:text-sm leading-relaxed">
               <span className="font-bold block mb-1 sm:mb-2">💡 Tips:</span>
-              <span className="block mb-1">• Images: Upload up to 5 at once (JPG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, AVIF - max 10MB each, 50MB total)</span>
-              <span className="block mb-1">• Documents: Upload 1 at a time (PDF, Word/DOC/DOCX/Pages, PowerPoint/PPT/PPTX/Keynote, Excel/XLS/XLSX/Numbers, OpenDocument ODF formats, CSV, TXT, RTF - max 25MB)</span>
-              <span>• Make sure to provide clear descriptions so others can easily find your resource</span>
+              <span className="block mb-1">
+                • Images: Upload up to 5 at once (JPG, PNG , etc. 10MB each,
+                50MB total)
+              </span>
+              <span className="block mb-1">
+                • Documents: Upload 1 at a time (PDF, DOCX, PPTX, etc. max 25MB)
+              </span>
+              <span>
+                • Make sure to provide clear descriptions so others can easily
+                find your resource
+              </span>
             </p>
           </div>
         </div>

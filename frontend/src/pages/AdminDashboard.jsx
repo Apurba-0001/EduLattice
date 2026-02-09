@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import ResourceTable from "../components/ResourceTable";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -13,6 +14,14 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("stats");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    type: null, // 'resource' or 'user'
+    id: null,
+    name: "",
+    isAdmin: false,
+    isDeleting: false,
+  });
 
   useEffect(() => {
     fetchData();
@@ -43,35 +52,94 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteResource = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this resource?")) {
-      return;
+    const resource = resources.find((r) => r._id === id);
+    if (resource) {
+      setDeleteModal({
+        isOpen: true,
+        type: "resource",
+        id,
+        name: resource.title,
+        isAdmin: false,
+        isDeleting: false,
+      });
     }
+  };
 
+  const handleDeleteResourceConfirm = async () => {
     try {
-      await api.delete(`/resources/${id}`);
-      setResources(resources.filter((r) => r._id !== id));
+      setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+      await api.delete(`/resources/${deleteModal.id}`);
+      setResources(resources.filter((r) => r._id !== deleteModal.id));
+      setDeleteModal({
+        isOpen: false,
+        type: null,
+        id: null,
+        name: "",
+        isAdmin: false,
+        isDeleting: false,
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete resource");
+      setError(err.response?.data?.message || "Failed to delete resource");
+      setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
     }
   };
 
   const handleDeleteUser = async (userId, isAdmin) => {
     // Prevent deleting admin users
     if (isAdmin) {
-      alert("Cannot delete admin users");
+      setError("Cannot delete admin users");
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this user?")) {
-      return;
+    const user = users.find((u) => u._id === userId);
+    if (user) {
+      setDeleteModal({
+        isOpen: true,
+        type: "user",
+        id: userId,
+        name: user.name,
+        isAdmin: false,
+        isDeleting: false,
+      });
     }
+  };
 
+  const handleDeleteUserConfirm = async () => {
     try {
-      await api.delete(`/auth/users/${userId}`);
-      setUsers(users.filter((u) => u._id !== userId));
+      setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+      await api.delete(`/auth/users/${deleteModal.id}`);
+      setUsers(users.filter((u) => u._id !== deleteModal.id));
+      setDeleteModal({
+        isOpen: false,
+        type: null,
+        id: null,
+        name: "",
+        isAdmin: false,
+        isDeleting: false,
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete user");
+      setError(err.response?.data?.message || "Failed to delete user");
+      setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
     }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteModal.type === "resource") {
+      handleDeleteResourceConfirm();
+    } else if (deleteModal.type === "user") {
+      handleDeleteUserConfirm();
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({
+      isOpen: false,
+      type: null,
+      id: null,
+      name: "",
+      isAdmin: false,
+      isDeleting: false,
+    });
   };
 
   return (
@@ -260,7 +328,9 @@ const AdminDashboard = () => {
                                 </span>
                               ) : (
                                 <button
-                                  onClick={() => handleDeleteUser(u._id, u.isAdmin)}
+                                  onClick={() =>
+                                    handleDeleteUser(u._id, u.isAdmin)
+                                  }
                                   className="btn btn-danger btn-sm"
                                 >
                                   Remove
@@ -740,6 +810,22 @@ const AdminDashboard = () => {
           }
         }
       `}</style>
+
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        title={
+          deleteModal.type === "resource" ? "Delete Resource" : "Delete User"
+        }
+        message={
+          deleteModal.type === "resource"
+            ? "Are you sure you want to delete this resource? This action cannot be undone."
+            : "Are you sure you want to delete this user? This action cannot be undone."
+        }
+        itemName={deleteModal.name}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        isLoading={deleteModal.isDeleting}
+      />
     </div>
   );
 };

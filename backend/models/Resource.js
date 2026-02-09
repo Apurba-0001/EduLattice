@@ -55,15 +55,19 @@ const resourceSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    imageGroupCount: {
+      type: Number,
+      default: 1,
+    },
+    imageGroupSize: {
+      type: Number,
+      default: 0,
+    },
     fileUrl: {
       type: String,
       required: true,
     },
     cloudinaryPublicId: {
-      type: String,
-      default: null,
-    },
-    driveFileId: {
       type: String,
       default: null,
     },

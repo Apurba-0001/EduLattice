@@ -107,7 +107,6 @@ EduLattice/
 │   │   ├── authRoutes.js         # Auth endpoints
 │   │   └── resourceRoutes.js     # Resource endpoints
 │   ├── services/
-│   │   ├── googleDrive.js        # Google Drive integration
 │   │   └── cloudinary.js         # Cloudinary integration
 │   ├── .env.example              # Environment variables template
 │   ├── package.json

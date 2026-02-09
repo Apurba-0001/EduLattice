@@ -71,6 +71,25 @@ const AllResources = () => {
     fetchResources();
   }, []);
 
+  // Filter grouped files to show only one row per group
+  const getUniqueResources = (resourceList) => {
+    const seenGroups = new Set();
+    return resourceList.filter((resource) => {
+      // If it's a grouped file (has imageGroupId)
+      if (resource.imageGroupId) {
+        // If we've already seen this group, skip it
+        if (seenGroups.has(resource.imageGroupId)) {
+          return false;
+        }
+        // Mark this group as seen
+        seenGroups.add(resource.imageGroupId);
+        return true;
+      }
+      // Non-grouped files always show
+      return true;
+    });
+  };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
 
@@ -254,10 +273,13 @@ const AllResources = () => {
         ) : resources.length > 0 ? (
           <div className="animate-fadeIn">
             <div className="mb-4 sm:mb-6 text-gray-600 text-sm sm:text-base font-medium">
-              Found {resources.length} resource
-              {resources.length !== 1 ? "s" : ""}
+              Found {getUniqueResources(resources).length} resource
+              {getUniqueResources(resources).length !== 1 ? "s" : ""}
             </div>
-            <ResourceTable resources={resources} showActions={true} />
+            <ResourceTable
+              resources={getUniqueResources(resources)}
+              showActions={true}
+            />
           </div>
         ) : (
           <div className="text-center py-16 sm:py-24 animate-slideUp">

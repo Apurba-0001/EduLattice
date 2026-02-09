@@ -2,23 +2,27 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 
-const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = false }) => {
+const ResourceTable = ({
+  resources,
+  onDelete,
+  showActions = true,
+  isDeleting = false,
+}) => {
   const { isAdmin } = useAuth();
   const [selectedResource, setSelectedResource] = useState(null);
   const [expandedRowId, setExpandedRowId] = useState(null);
   const [mobileActionPopup, setMobileActionPopup] = useState(null);
-  const [groupCounts, setGroupCounts] = useState({});
 
-  // Calculate number of images in each group
-  React.useEffect(() => {
-    const counts = {};
-    resources.forEach((resource) => {
-      if (resource.imageGroupId) {
-        counts[resource.imageGroupId] = (counts[resource.imageGroupId] || 0) + 1;
-      }
-    });
-    setGroupCounts(counts);
-  }, [resources]);
+  const handleViewDetails = async (resource) => {
+    try {
+      // Track view count
+      await api.post(`/resources/${resource._id}/view`);
+    } catch (error) {
+      console.error("Failed to track view:", error);
+      // Don't block viewing if tracking fails
+    }
+    setSelectedResource(resource);
+  };
 
   const handleDownload = async (resource) => {
     try {
@@ -31,16 +35,21 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
 
       // Check if this is a grouped image - if so, download the entire group as zip
       if (resource.imageGroupId) {
-        console.log(`📦 Downloading grouped images with groupId: ${resource.imageGroupId}`);
-        const response = await api.get(`/resources/${resource._id}/download-group`, {
-          responseType: "blob",
-        });
+        console.log(
+          `📦 Downloading grouped images with groupId: ${resource.imageGroupId}`,
+        );
+        const response = await api.get(
+          `/resources/${resource._id}/download-group`,
+          {
+            responseType: "blob",
+          },
+        );
 
         // Create blob URL and download zip
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${resource.title || "images"}_group.zip`;
+        link.download = `${resource.title || "images"}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -102,16 +111,23 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
   };
 
   // Calculate total size for grouped resources
-  const getGroupTotalSize = (groupId) => {
-    if (!groupId) return 0;
+  const getGroupTotalSize = (resource) => {
+    if (!resource.imageGroupId) return resource.fileSize || 0;
+    // Use backend calculated size if available
+    if (resource.imageGroupSize) return resource.imageGroupSize;
+    // Fallback to frontend calculation
     return resources
-      .filter((r) => r.imageGroupId === groupId)
+      .filter((r) => r.imageGroupId === resource.imageGroupId)
       .reduce((total, r) => total + (r.fileSize || 0), 0);
   };
 
-  const getGroupFileCount = (groupId) => {
-    if (!groupId) return 1;
-    return resources.filter((r) => r.imageGroupId === groupId).length;
+  const getGroupFileCount = (resource) => {
+    if (!resource.imageGroupId) return 1;
+    // Use backend calculated count if available
+    if (resource.imageGroupCount) return resource.imageGroupCount;
+    // Fallback to frontend calculation
+    return resources.filter((r) => r.imageGroupId === resource.imageGroupId)
+      .length;
   };
 
   const formatDate = (date) => {
@@ -155,7 +171,7 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                   📚 Subject
                 </th>
                 <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap min-w-[130px]">
-                  📅 Semester
+                  Semester
                 </th>
                 <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap min-w-[160px]">
                   📖 Resource Type
@@ -191,7 +207,7 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                         </span>
                         {resource.imageGroupId && (
                           <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0">
-                            📦 x{groupCounts[resource.imageGroupId] || 1}
+                            📦 x{resource.imageGroupCount || 1}
                           </span>
                         )}
                       </div>
@@ -219,7 +235,7 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                     {/* Actions */}
                     {showActions && (
                       <td className="px-2 sm:px-4 md:px-6 py-3 sm:py-4 sticky right-0 bg-white z-10 min-w-[220px] border-l-2 border-gray-100">
-                        <div className="flex gap-1 sm:gap-2 justify-center flex-nowrap flex-wrap">
+                        <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
                           <button
                             onClick={() => handleDownload(resource)}
                             className="px-2 sm:px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 active:scale-95 text-xs sm:text-sm whitespace-nowrap min-h-10 sm:min-h-10 shadow-md"
@@ -231,7 +247,7 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                             <span className="sm:hidden">📥</span>
                           </button>
                           <button
-                            onClick={() => setSelectedResource(resource)}
+                            onClick={() => handleViewDetails(resource)}
                             className="px-2 sm:px-3 py-2 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all duration-300 active:scale-95 text-xs sm:text-sm whitespace-nowrap min-h-10 sm:min-h-10 shadow-md"
                             title="View details"
                           >
@@ -280,7 +296,7 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                     </h2>
                     {selectedResource.imageGroupId && (
                       <span className="inline-block px-2 py-1 bg-white/30 text-white rounded-full text-xs font-bold whitespace-nowrap">
-                        📦 {groupCounts[selectedResource.imageGroupId] || 1} images
+                        📦 {selectedResource.imageGroupCount || 1} images
                       </span>
                     )}
                   </div>
@@ -309,7 +325,7 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                 </div>
                 <div className="min-w-0">
                   <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
-                    📅 Semester
+                    Semester
                   </label>
                   <p className="text-gray-900 font-medium text-sm sm:text-base md:text-lg mt-1 break-words">
                     {selectedResource.semester}
@@ -390,21 +406,17 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                         <div className="space-y-1">
                           <p className="font-semibold text-xs sm:text-sm text-gray-900">
                             {(
-                              getGroupTotalSize(selectedResource.imageGroupId) /
+                              getGroupTotalSize(selectedResource) /
                               1024 /
                               1024
                             ).toFixed(2)}{" "}
                             MB
                           </p>
                           <p className="text-xs text-gray-600">
-                            {getGroupFileCount(selectedResource.imageGroupId)}{" "}
-                            file{
-                              getGroupFileCount(
-                                selectedResource.imageGroupId
-                              ) !== 1
-                                ? "s"
-                                : ""
-                            }
+                            {getGroupFileCount(selectedResource)} file
+                            {getGroupFileCount(selectedResource) !== 1
+                              ? "s"
+                              : ""}
                           </p>
                         </div>
                       ) : (
@@ -415,6 +427,26 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
                       )}
                     </div>
                   </div>
+                  {/* Group Information */}
+                  {selectedResource.imageGroupId && (
+                    <div className="border-t border-gray-200 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                      <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
+                        📸 Image Group:
+                      </span>
+                      <div className="text-right">
+                        <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                          {getGroupFileCount(selectedResource)} image
+                          {getGroupFileCount(selectedResource) !== 1
+                            ? "s"
+                            : ""}{" "}
+                          grouped
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          All images will be downloaded as a zip file
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <div className="border-t border-gray-200 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                     <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
                       👁️ Views:
@@ -474,7 +506,7 @@ const ResourceTable = ({ resources, onDelete, showActions = true, isDeleting = f
               </button>
               <button
                 onClick={() => {
-                  setSelectedResource(mobileActionPopup);
+                  handleViewDetails(mobileActionPopup);
                   setMobileActionPopup(null);
                 }}
                 className="w-full px-4 py-3 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 shadow-md"

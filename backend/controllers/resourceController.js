@@ -1,73 +1,121 @@
 import Resource from "../models/Resource.js";
-import googleDriveService from "../services/googleDrive.js";
 import cloudinaryService from "../services/cloudinary.js";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import https from "https";
 import archiver from "archiver";
 
-// List of dangerous file extensions and MIME types to block
-const DANGEROUS_EXTENSIONS = [
-  // Windows executables
-  ".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".pif", ".vbs", ".vbe",
-  // Linux/Unix executables
-  ".sh", ".bash", ".ksh", ".csh", ".run", ".elf",
-  // Mac executables
-  ".app", ".dmg", ".pkg",
-  // Java
-  ".jar", ".jnlp", ".class",
-  // Archives (can contain executables)
-  ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".iso", ".cab", ".arj", ".ace",
-  // Libraries (can be dangerous)
-  ".dll", ".so", ".dylib", ".o", ".a", ".lib", ".exe.manifest",
-  // Scripts (can be dangerous)
-  ".js", ".vbs", ".ps1", ".psm1", ".psd1", ".wsh", ".js.txt",
-  // System files
-  ".sys", ".drv", ".ko", ".dbg",
-  // Office macros
-  ".docm", ".xlsm", ".pptm",
-];
-
-const DANGEROUS_MIME_TYPES = [
-  "application/x-executable",
-  "application/x-elf",
-  "application/x-mach-binary",
-  "application/x-msdownload",
-  "application/x-msdos-program",
-  "application/x-msi",
-  "application/x-sh",
-  "application/x-shellscript",
-  "application/x-bash",
-  "application/x-javascript",
-  "text/x-shellscript",
-  "text/x-python",
-  "text/x-perl",
-  "text/x-ruby",
-];
-
-// Helper function to check if file is dangerous
-const isDangerousFile = (mimetype, filename) => {
+// Helper function to check if file is dangerous and return description
+const getDangerousFileReason = (mimetype, filename) => {
   const ext = path.extname(filename).toLowerCase();
-  
+
+  // Mapping of dangerous extensions to descriptions
+  const extensionDescriptions = {
+    // Windows executables
+    ".exe": "Windows executable",
+    ".bat": "Windows batch script",
+    ".cmd": "Windows command script",
+    ".com": "Windows executable",
+    ".msi": "Windows installer",
+    ".scr": "Windows screensaver",
+    ".pif": "Windows shortcut",
+    ".vbs": "Visual Basic script",
+    ".vbe": "Visual Basic encrypted script",
+    // Linux/Unix executables
+    ".sh": "Shell script",
+    ".bash": "Bash script",
+    ".ksh": "Korn shell script",
+    ".csh": "C shell script",
+    ".run": "Linux executable",
+    ".elf": "Linux executable",
+    // Mac executables
+    ".app": "Mac application",
+    ".dmg": "Mac disk image",
+    ".pkg": "Mac installer",
+    // Java
+    ".jar": "Java executable",
+    ".jnlp": "Java web start",
+    ".class": "Java class file",
+    // Archives (can contain executables)
+    ".zip": "ZIP archive (may contain malicious files)",
+    ".rar": "RAR archive (may contain malicious files)",
+    ".7z": "7-Zip archive (may contain malicious files)",
+    ".tar": "TAR archive (may contain malicious files)",
+    ".gz": "GZIP archive (may contain malicious files)",
+    ".bz2": "BZIP2 archive (may contain malicious files)",
+    ".iso": "ISO image (may contain malicious files)",
+    ".cab": "Cabinet archive (may contain malicious files)",
+    ".arj": "ARJ archive (may contain malicious files)",
+    ".ace": "ACE archive (may contain malicious files)",
+    // Libraries (can be dangerous)
+    ".dll": "Windows library (can contain malware)",
+    ".so": "Linux shared library (can contain malware)",
+    ".dylib": "Mac dynamic library (can contain malware)",
+    ".o": "Object file (compiled code)",
+    ".a": "Static library",
+    ".lib": "Windows library",
+    // Scripts (can be dangerous)
+    ".js": "JavaScript file (potential security risk)",
+    ".ps1": "PowerShell script",
+    ".psm1": "PowerShell module",
+    ".psd1": "PowerShell data file",
+    ".wsh": "Windows script host",
+    // System files
+    ".sys": "System driver",
+    ".drv": "Device driver",
+    ".ko": "Linux kernel module",
+    ".dbg": "Debug file",
+    // Office macros
+    ".docm": "Word document with macros (potential risk)",
+    ".xlsm": "Excel workbook with macros (potential risk)",
+    ".pptm": "PowerPoint with macros (potential risk)",
+  };
+
   // Check against blocked extensions
-  if (DANGEROUS_EXTENSIONS.includes(ext)) {
-    return true;
+  if (extensionDescriptions[ext]) {
+    return extensionDescriptions[ext];
   }
-  
+
+  // Mapping of dangerous MIME types to descriptions
+  const mimeTypeDescriptions = {
+    "application/x-executable": "Executable file",
+    "application/x-elf": "Linux executable",
+    "application/x-mach-binary": "Mac executable",
+    "application/x-msdownload": "Windows executable",
+    "application/x-msdos-program": "DOS executable",
+    "application/x-msi": "Windows installer",
+    "application/x-sh": "Shell script",
+    "application/x-shellscript": "Shell script",
+    "application/x-bash": "Bash script",
+    "application/x-javascript": "JavaScript (potential security risk)",
+    "text/x-shellscript": "Shell script",
+    "text/x-python": "Python script",
+    "text/x-perl": "Perl script",
+    "text/x-ruby": "Ruby script",
+  };
+
   // Check against blocked MIME types
-  if (DANGEROUS_MIME_TYPES.includes(mimetype)) {
-    return true;
+  if (mimeTypeDescriptions[mimetype]) {
+    return mimeTypeDescriptions[mimetype];
   }
-  
+
   // Check for double extensions (e.g., image.jpg.exe)
   if (filename.lastIndexOf(".") !== filename.indexOf(".")) {
     const doubleExt = filename.substring(filename.lastIndexOf(".") - 4);
-    if (DANGEROUS_EXTENSIONS.some(dangerous => doubleExt.includes(dangerous))) {
-      return true;
+    for (const [dangerous, description] of Object.entries(
+      extensionDescriptions,
+    )) {
+      if (doubleExt.includes(dangerous)) {
+        return (
+          "File with suspicious double extension (" +
+          dangerous +
+          ") - may be disguised malware"
+        );
+      }
     }
   }
-  
-  return false;
+
+  return null;
 };
 
 // Helper function to determine file type
@@ -76,18 +124,30 @@ const getFileType = (mimetype, filename) => {
 
   // PDF
   if (mimetype === "application/pdf" || ext === ".pdf") return "pdf";
-  
+
   // PowerPoint (MS Office & OpenDocument)
-  if (mimetype.includes("powerpoint") || ext === ".ppt" || ext === ".pptx" ||
-      ext === ".odp" || mimetype.includes("presentation"))
+  if (
+    mimetype.includes("powerpoint") ||
+    ext === ".ppt" ||
+    ext === ".pptx" ||
+    ext === ".odp" ||
+    mimetype.includes("presentation")
+  )
     return "ppt";
-  
+
   // Word (MS Office & OpenDocument)
-  if (mimetype.includes("word") || ext === ".doc" || ext === ".docx" ||
-      ext === ".odt" || ext === ".txt" || ext === ".rtf" ||
-      mimetype === "text/plain" || mimetype === "application/rtf")
+  if (
+    mimetype.includes("word") ||
+    ext === ".doc" ||
+    ext === ".docx" ||
+    ext === ".odt" ||
+    ext === ".txt" ||
+    ext === ".rtf" ||
+    mimetype === "text/plain" ||
+    mimetype === "application/rtf"
+  )
     return "doc";
-  
+
   // Excel (MS Office, OpenDocument & Apple)
   if (
     mimetype.includes("spreadsheet") ||
@@ -99,12 +159,15 @@ const getFileType = (mimetype, filename) => {
     mimetype === "text/csv"
   )
     return "excel";
-  
+
   // Apple formats
-  if (ext === ".pages" || mimetype === "application/vnd.apple.pages") return "doc";
-  if (ext === ".numbers" || mimetype === "application/vnd.apple.numbers") return "excel";
-  if (ext === ".keynote" || mimetype === "application/vnd.apple.keynote") return "ppt";
-  
+  if (ext === ".pages" || mimetype === "application/vnd.apple.pages")
+    return "doc";
+  if (ext === ".numbers" || mimetype === "application/vnd.apple.numbers")
+    return "excel";
+  if (ext === ".keynote" || mimetype === "application/vnd.apple.keynote")
+    return "ppt";
+
   // Images
   if (mimetype.startsWith("image/")) return "image";
 
@@ -139,18 +202,24 @@ export const uploadResource = async (req, res) => {
 
     // SECURITY: Check for dangerous file types
     for (let file of files) {
-      if (isDangerousFile(file.mimetype, file.originalname)) {
-        console.log(`🚨 SECURITY ALERT: Blocked dangerous file upload: ${file.originalname}`);
+      const dangerReason = getDangerousFileReason(
+        file.mimetype,
+        file.originalname,
+      );
+      if (dangerReason) {
+        console.log(
+          `🚨 SECURITY ALERT: Blocked dangerous file upload - "${file.originalname}" (${dangerReason})`,
+        );
         return res.status(400).json({
           success: false,
-          message: `Security alert: File type not allowed. "${file.originalname}" contains executable or dangerous content.`,
+          message: `Security alert: File "${file.originalname}" is blocked. Reason: ${dangerReason}. Please upload a safe file instead.`,
         });
       }
     }
 
     // Validate file types and count
     const fileTypes = files.map((file) =>
-      getFileType(file.mimetype, file.originalname)
+      getFileType(file.mimetype, file.originalname),
     );
 
     // Check all file types are valid
@@ -164,7 +233,7 @@ export const uploadResource = async (req, res) => {
     // Check if mixing images and documents
     const hasImages = fileTypes.includes("image");
     const hasDocuments = fileTypes.some(
-      (type) => type !== "image" && type !== null
+      (type) => type !== "image" && type !== null,
     );
 
     if (hasImages && hasDocuments) {
@@ -263,13 +332,13 @@ export const uploadResource = async (req, res) => {
       if (fileType === "image") {
         uploadResult = await cloudinaryService.uploadImage(
           file.buffer,
-          storageFileName
+          storageFileName,
         );
       } else {
         uploadResult = await cloudinaryService.uploadDocument(
           file.buffer,
           storageFileName,
-          file.mimetype
+          file.mimetype,
         );
       }
 
@@ -290,6 +359,8 @@ export const uploadResource = async (req, res) => {
         fileSize: file.size,
         uploadedBy: req.user._id,
         imageGroupId: imageGroupId,
+        imageGroupCount: files.length,
+        imageGroupSize: totalSize,
       });
 
       // Populate uploader info
@@ -492,7 +563,13 @@ export const updateResource = async (req, res) => {
     }
 
     // Only allow updating specific fields (prevent tampering with fileUrl, uploadedBy, etc.)
-    const allowedUpdates = ["title", "description", "subject", "semester", "resourceType"];
+    const allowedUpdates = [
+      "title",
+      "description",
+      "subject",
+      "semester",
+      "resourceType",
+    ];
     const updates = {};
 
     for (const field of allowedUpdates) {
@@ -503,14 +580,16 @@ export const updateResource = async (req, res) => {
 
     // If title changes, update fileName as well
     if (updates.title && updates.title !== resource.title) {
-      const ext = resource.fileName.substring(resource.fileName.lastIndexOf("."));
+      const ext = resource.fileName.substring(
+        resource.fileName.lastIndexOf("."),
+      );
       updates.fileName = updates.title + ext;
     }
 
     const updatedResource = await Resource.findByIdAndUpdate(
       req.params.id,
       updates,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).populate("uploadedBy", "name email");
 
     console.log(`✅ Resource updated by ${isAdmin && userId !== uploadedBy ? "Admin" : "Owner"}:
@@ -537,7 +616,7 @@ export const updateResource = async (req, res) => {
 export const deleteResource = async (req, res) => {
   try {
     const resource = req.resource; // Set by authorizeResourceAccess middleware
-    
+
     // SECURITY: Double-check resource and user exist
     if (!resource || !req.user) {
       return res.status(401).json({
@@ -574,9 +653,11 @@ export const deleteResource = async (req, res) => {
 
     // Find all resources to delete (if imageGroupId exists, delete all grouped resources)
     let resourcesToDelete = [resource];
-    
+
     if (resource.imageGroupId) {
-      console.log(`📸 Found grouped images with imageGroupId: ${resource.imageGroupId}`);
+      console.log(
+        `📸 Found grouped images with imageGroupId: ${resource.imageGroupId}`,
+      );
       const groupedResources = await Resource.find({
         imageGroupId: resource.imageGroupId,
       });
@@ -593,8 +674,8 @@ export const deleteResource = async (req, res) => {
         // Delete from storage (all files now on Cloudinary)
         // First try to use stored cloudinaryPublicId, then fall back to URL extraction
         let publicId = res.cloudinaryPublicId;
-        
-        if (!publicId && res.fileUrl && res.fileUrl.includes('cloudinary')) {
+
+        if (!publicId && res.fileUrl && res.fileUrl.includes("cloudinary")) {
           // Extract public_id from Cloudinary URL
           // URL format: https://res.cloudinary.com/xxx/image/upload/v123/edulattice/filename.ext
           try {
@@ -612,13 +693,15 @@ export const deleteResource = async (req, res) => {
         }
 
         console.log(`Attempting to delete from Cloudinary: ${publicId}`);
-        
+
         if (publicId) {
           try {
             await cloudinaryService.deleteImage(publicId);
             console.log(`✅ Deleted file from Cloudinary: ${publicId}`);
           } catch (cloudError) {
-            console.log(`⚠️ Cloudinary deletion failed for ${publicId}: ${cloudError.message}`);
+            console.log(
+              `⚠️ Cloudinary deletion failed for ${publicId}: ${cloudError.message}`,
+            );
             failedDeletions.push({
               fileId: res.fileId,
               fileName: res.fileName,
@@ -626,7 +709,9 @@ export const deleteResource = async (req, res) => {
             });
           }
         } else if (res.driveFileId) {
-          console.log(`⚠️ Resource was stored on Google Drive (ID: ${res.driveFileId}), which is no longer supported. Removing database record only.`);
+          console.log(
+            `⚠️ Resource was stored on Google Drive (ID: ${res.driveFileId}), which is no longer supported. Removing database record only.`,
+          );
         }
 
         // Delete from database
@@ -645,11 +730,13 @@ export const deleteResource = async (req, res) => {
 
     // Log who deleted it
     const deletedBy = isAdmin && userId !== uploadedBy ? "Admin" : "Owner";
-    console.log(`✅ ${resourcesToDelete.length} resource(s) deleted successfully by ${deletedBy}`);
+    console.log(
+      `✅ ${resourcesToDelete.length} resource(s) deleted successfully by ${deletedBy}`,
+    );
 
     res.status(200).json({
       success: true,
-      message: 
+      message:
         resourcesToDelete.length > 1
           ? `Successfully deleted ${resourcesToDelete.length} grouped images`
           : "Resource deleted successfully",
@@ -657,7 +744,8 @@ export const deleteResource = async (req, res) => {
         deletedCount: deletedFileIds.length,
         deletedFileIds: deletedFileIds,
         failedCount: failedDeletions.length,
-        failedDeletions: failedDeletions.length > 0 ? failedDeletions : undefined,
+        failedDeletions:
+          failedDeletions.length > 0 ? failedDeletions : undefined,
         deletedBy: deletedBy,
         isGroupDelete: resourcesToDelete.length > 1,
       },
@@ -719,6 +807,40 @@ export const getResourceStats = async (req, res) => {
       },
     });
   } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// @desc    Track resource view (increment view count)
+// @route   POST /api/resources/:id/view
+// @access  Private
+export const trackView = async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.id);
+
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: "Resource not found",
+      });
+    }
+
+    // Increment view count
+    resource.views = (resource.views || 0) + 1;
+    await resource.save();
+
+    res.status(200).json({
+      success: true,
+      message: "View tracked successfully",
+      data: {
+        views: resource.views,
+      },
+    });
+  } catch (error) {
+    console.error("Track view error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -823,7 +945,8 @@ export const downloadGroupedResources = async (req, res) => {
     if (!resource.imageGroupId) {
       return res.status(400).json({
         success: false,
-        message: "This resource is not part of a grouped upload. Use the regular download endpoint.",
+        message:
+          "This resource is not part of a grouped upload. Use the regular download endpoint.",
       });
     }
 
@@ -839,7 +962,9 @@ export const downloadGroupedResources = async (req, res) => {
       });
     }
 
-    console.log(`📦 Downloading group of ${groupedResources.length} images with groupId: ${resource.imageGroupId}`);
+    console.log(
+      `📦 Downloading group of ${groupedResources.length} images with groupId: ${resource.imageGroupId}`,
+    );
 
     // Increment download count for all images in the group
     for (const res of groupedResources) {
@@ -882,7 +1007,9 @@ export const downloadGroupedResources = async (req, res) => {
       try {
         const fileUrl = groupResource.fileUrl;
         if (!fileUrl) {
-          console.warn(`⚠️ File URL not available for: ${groupResource.fileName}`);
+          console.warn(
+            `⚠️ File URL not available for: ${groupResource.fileName}`,
+          );
           continue;
         }
 
@@ -900,7 +1027,7 @@ export const downloadGroupedResources = async (req, res) => {
               const fileName = `${fileIndex}_${groupResource.title}${fileExtension}`;
               archive.append(cloudRes, { name: fileName });
               fileIndex++;
-              
+
               resolve();
             })
             .on("error", reject);
@@ -913,7 +1040,9 @@ export const downloadGroupedResources = async (req, res) => {
 
     // Finalize the archive
     await archive.finalize();
-    console.log(`✅ Group download completed for ${groupedResources.length} images`);
+    console.log(
+      `✅ Group download completed for ${groupedResources.length} images`,
+    );
   } catch (error) {
     console.error("Group download error:", error);
     if (!res.headersSent) {
