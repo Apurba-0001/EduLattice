@@ -875,6 +875,28 @@ export const trackView = async (req, res) => {
   }
 };
 
+// Helper function to get file size from Cloudinary
+const getFileSize = (fileUrl) => {
+  return new Promise((resolve, reject) => {
+    https
+      .request(fileUrl, { method: "HEAD", timeout: 10000 }, (res) => {
+        if (res.statusCode === 200 && res.headers["content-length"]) {
+          resolve(parseInt(res.headers["content-length"], 10));
+        } else {
+          resolve(null); // Cannot determine size
+        }
+      })
+      .on("error", () => {
+        resolve(null); // Fail gracefully, still allow download
+      })
+      .on("timeout", function () {
+        this.destroy();
+        resolve(null);
+      })
+      .end();
+  });
+};
+
 export const downloadResource = async (req, res) => {
   try {
     const resource = await Resource.findById(req.params.id).populate(
@@ -904,6 +926,16 @@ export const downloadResource = async (req, res) => {
       });
     }
 
+    // Try to get file size for Content-Length header (improves UX)
+    let contentLength = null;
+    try {
+      contentLength = await getFileSize(fileUrl);
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Could not retrieve file size:", err.message);
+      }
+    }
+
     // Set proper headers for file download
     res.setHeader(
       "Content-Disposition",
@@ -911,28 +943,62 @@ export const downloadResource = async (req, res) => {
     );
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
+    // Add Content-Length if available
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
 
     // Fetch file from Cloudinary and pipe to response
     try {
-      https
-        .get(fileUrl, (cloudRes) => {
-          // Forward headers from Cloudinary
-          if (cloudRes.headers["content-type"]) {
-            res.setHeader("Content-Type", cloudRes.headers["content-type"]);
-          }
-          // Pipe the response
-          cloudRes.pipe(res);
-        })
-        .on("error", (err) => {
-          console.error("Cloudinary request error:", err.message);
+      const request = https.get(fileUrl, { timeout: 30000 }, (cloudRes) => {
+        // Check for successful response
+        if (cloudRes.statusCode !== 200) {
           if (!res.headersSent) {
-            res.status(500).json({
+            res.status(cloudRes.statusCode).json({
               success: false,
-              message: "Error downloading file",
+              message: `Cloudinary returned status ${cloudRes.statusCode}`,
             });
           }
-        });
+          return;
+        }
+
+        // Forward Content-Type from Cloudinary if available
+        if (cloudRes.headers["content-type"]) {
+          res.setHeader("Content-Type", cloudRes.headers["content-type"]);
+        }
+
+        // Pipe the response with error handling
+        cloudRes.pipe(res);
+      });
+
+      request.on("error", (err) => {
+        console.error("Cloudinary request error:", err.message);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: "Error downloading file from storage",
+          });
+        } else {
+          res.destroy();
+        }
+      });
+
+      request.on("timeout", () => {
+        console.error("Cloudinary request timeout");
+        request.destroy();
+        if (!res.headersSent) {
+          res.status(504).json({
+            success: false,
+            message: "Download timeout - file server not responding",
+          });
+        } else {
+          res.destroy();
+        }
+      });
     } catch (err) {
       if (process.env.NODE_ENV === "development") {
         console.error("Error downloading file:", err.message);
@@ -948,10 +1014,12 @@ export const downloadResource = async (req, res) => {
     if (process.env.NODE_ENV === "development") {
       console.error("Download error:", error);
     }
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: "Server error",
+      });
+    }
   }
 };
 
@@ -993,19 +1061,21 @@ export const downloadGroupedResources = async (req, res) => {
       });
     }
 
-    console.log(
-      `📦 Downloading group of ${groupedResources.length} images with groupId: ${resource.imageGroupId}`,
-    );
-
-    // Increment download count for all images in the group
-    for (const res of groupedResources) {
-      res.downloads = (res.downloads || 0) + 1;
-      await res.save();
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `📦 Downloading group of ${groupedResources.length} images with groupId: ${resource.imageGroupId}`,
+      );
     }
 
-    // Create zip file
+    // Increment download count for all images in the group
+    for (const dbResource of groupedResources) {
+      dbResource.downloads = (dbResource.downloads || 0) + 1;
+      await dbResource.save();
+    }
+
+    // Create zip file with optimized compression
     const archive = archiver("zip", {
-      zlib: { level: 9 },
+      zlib: { level: 6 }, // Balanced compression (faster than level 9 but still good)
     });
 
     // Set response headers for zip download
@@ -1016,7 +1086,9 @@ export const downloadGroupedResources = async (req, res) => {
     );
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
 
     // Handle archive errors
     archive.on("error", (err) => {
@@ -1026,56 +1098,93 @@ export const downloadGroupedResources = async (req, res) => {
           success: false,
           message: "Error creating zip file",
         });
+      } else {
+        res.destroy();
       }
     });
 
-    // Pipe archive to response
+    // Pipe archive to response with error handling
     archive.pipe(res);
+    res.on("error", (err) => {
+      console.error("Response stream error:", err);
+      archive.destroy();
+    });
 
-    // Add each file to the archive
+    // Add files to archive in parallel for better performance
+    // Limit concurrent downloads to 3 to avoid overwhelming the server
+    let activeCount = 0;
     let fileIndex = 1;
-    for (const groupResource of groupedResources) {
+    const maxConcurrent = 3;
+    const queue = [...groupedResources];
+
+    const processNext = async () => {
+      if (queue.length === 0) {
+        if (activeCount === 0) {
+          // All files processed, finalize archive
+          await archive.finalize();
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              `✅ Group download completed for ${groupedResources.length} images`,
+            );
+          }
+        }
+        return;
+      }
+
+      if (activeCount >= maxConcurrent) {
+        // Wait before processing more
+        setTimeout(processNext, 100);
+        return;
+      }
+
+      activeCount++;
+      const groupResource = queue.shift();
+      const currentIndex = groupedResources.indexOf(groupResource) + 1;
+
       try {
         const fileUrl = groupResource.fileUrl;
         if (!fileUrl) {
           console.warn(
             `⚠️ File URL not available for: ${groupResource.fileName}`,
           );
-          continue;
+          activeCount--;
+          processNext();
+          return;
         }
 
-        // Create a promise-based wrapper for https.get
+        // Download file with timeout
         await new Promise((resolve, reject) => {
-          https
-            .get(fileUrl, (cloudRes) => {
-              if (cloudRes.statusCode !== 200) {
-                reject(new Error(`HTTP ${cloudRes.statusCode}`));
-                return;
-              }
+          const request = https.get(fileUrl, { timeout: 20000 }, (cloudRes) => {
+            if (cloudRes.statusCode !== 200) {
+              reject(new Error(`HTTP ${cloudRes.statusCode}`));
+              return;
+            }
 
-              // Add file to archive with sequential naming
-              const fileExtension = path.extname(groupResource.fileName);
-              const fileName = `${fileIndex}_${groupResource.title}${fileExtension}`;
-              archive.append(cloudRes, { name: fileName });
-              fileIndex++;
+            // Add file to archive with sequential naming
+            const fileExtension = path.extname(groupResource.fileName);
+            const fileName = `${currentIndex}_${groupResource.title}${fileExtension}`;
+            archive.append(cloudRes, { name: fileName });
 
-              resolve();
-            })
-            .on("error", reject);
+            resolve();
+          });
+
+          request.on("error", reject);
+          request.on("timeout", () => {
+            request.destroy();
+            reject(new Error("Request timeout"));
+          });
         });
       } catch (err) {
         console.warn(`⚠️ Failed to add file to archive: ${err.message}`);
         // Continue with other files
+      } finally {
+        activeCount--;
+        processNext();
       }
-    }
+    };
 
-    // Finalize the archive
-    await archive.finalize();
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `✅ Group download completed for ${groupedResources.length} images`,
-      );
-    }
+    // Start processing files
+    processNext();
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
       console.error("Group download error:", error);

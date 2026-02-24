@@ -4,13 +4,186 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════
+   NEUMORPHISM DESIGN SYSTEM
+   Base color: #e2e8f0 (slate-200)
+   Light shadow: #ffffff
+   Dark shadow:  #b8c0cc
+═══════════════════════════════════════════ */
+:root {
+  --neu-bg: #e2e8f0;
+  --neu-bg-dark: #d1d9e6;
+  --neu-shadow-light: #ffffff;
+  --neu-shadow-dark: #b8c0cc;
+
+  /* Raised (default card/element) */
+  --neu-raised:
+    6px 6px 14px var(--neu-shadow-dark), -6px -6px 14px var(--neu-shadow-light);
+
+  /* Raised – larger (page cards) */
+  --neu-raised-lg:
+    10px 10px 24px var(--neu-shadow-dark),
+    -10px -10px 24px var(--neu-shadow-light);
+
+  /* Raised – subtle (inline chips/badges) */
+  --neu-raised-sm:
+    3px 3px 7px var(--neu-shadow-dark), -3px -3px 7px var(--neu-shadow-light);
+
+  /* Pressed / inset (active buttons, focused inputs) */
+  --neu-inset:
+    inset 4px 4px 10px var(--neu-shadow-dark),
+    inset -4px -4px 10px var(--neu-shadow-light);
+
+  /* Inset subtle (input resting state) */
+  --neu-inset-sm:
+    inset 2px 2px 6px var(--neu-shadow-dark),
+    inset -2px -2px 6px var(--neu-shadow-light);
+
+  /* Flat (no depth, same bg) */
+  --neu-flat: none;
+}
+
 @layer base {
   body {
-    @apply bg-white text-gray-900 font-sans;
+    background-color: var(--neu-bg);
+    color: #334155;
+    font-family: "Inter", "Poppins", sans-serif;
   }
 
   #root {
     @apply min-h-screen;
+    background-color: var(--neu-bg);
+  }
+}
+
+/* ── Neumorphism utility classes ── */
+@layer utilities {
+  /* Surfaces */
+  .neu-bg {
+    background-color: var(--neu-bg);
+  }
+  .neu-surface {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-raised);
+  }
+  .neu-surface-lg {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-raised-lg);
+  }
+  .neu-surface-sm {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-raised-sm);
+  }
+  .neu-inset {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-inset);
+  }
+  .neu-inset-sm {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-inset-sm);
+  }
+
+  /* Input field */
+  .neu-input {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-inset-sm);
+    border: none;
+    outline: none;
+    color: #334155;
+  }
+  .neu-input:focus {
+    box-shadow: var(--neu-inset);
+    outline: none;
+  }
+  .neu-input::placeholder {
+    color: #94a3b8;
+  }
+
+  /* Button – raised, becomes inset on press */
+  .neu-btn {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-raised);
+    border: none;
+    cursor: pointer;
+    transition:
+      box-shadow 0.15s ease,
+      transform 0.1s ease;
+  }
+  .neu-btn:hover {
+    box-shadow: var(--neu-raised-lg);
+  }
+  .neu-btn:active {
+    box-shadow: var(--neu-inset);
+    transform: scale(0.98);
+  }
+
+  /* Accent button (indigo gradient on raised base) */
+  .neu-btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow:
+      4px 4px 12px #b8c0cc,
+      -2px -2px 8px #ffffff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition:
+      box-shadow 0.15s ease,
+      transform 0.1s ease,
+      filter 0.15s ease;
+  }
+  .neu-btn-primary:hover {
+    filter: brightness(1.08);
+    box-shadow:
+      6px 6px 16px #b8c0cc,
+      -3px -3px 10px #ffffff;
+  }
+  .neu-btn-primary:active {
+    box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.25);
+    transform: scale(0.97);
+  }
+
+  /* Danger button */
+  .neu-btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow:
+      4px 4px 12px #b8c0cc,
+      -2px -2px 8px #ffffff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition:
+      box-shadow 0.15s ease,
+      transform 0.1s ease,
+      filter 0.15s ease;
+  }
+  .neu-btn-danger:hover {
+    filter: brightness(1.08);
+  }
+  .neu-btn-danger:active {
+    box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.25);
+    transform: scale(0.97);
+  }
+
+  /* Badge / tag */
+  .neu-badge {
+    background-color: var(--neu-bg);
+    box-shadow: var(--neu-raised-sm);
+  }
+
+  /* Divider */
+  .neu-divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #b8c0cc, transparent);
+  }
+
+  /* Hide scrollbar while keeping scroll functionality */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 

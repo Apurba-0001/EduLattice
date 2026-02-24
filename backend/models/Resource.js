@@ -122,7 +122,6 @@ resourceSchema.index({ resourceType: 1 });
 resourceSchema.index({ semester: 1 });
 resourceSchema.index({ uploadedBy: 1 });
 resourceSchema.index({ createdAt: -1 }); // For sorting by latest
-resourceSchema.index({ fileId: 1 }); // For unique file identification
 resourceSchema.index({ title: 1 }); // For title searches
 resourceSchema.index({ subject: 1, semester: 1, resourceType: 1 }); // Combined filter index
 resourceSchema.index({ downloads: -1 }); // For popular resources

@@ -154,140 +154,188 @@ const ResourceTable = ({
     <>
       <div className="w-full overflow-hidden">
         {/* Mobile scroll indicator */}
-        <div className="sm:hidden text-xs text-gray-500 text-center mb-3 py-2 bg-blue-50 rounded font-medium">
+        <div className="sm:hidden text-xs text-slate-500 text-center mb-3 py-2 neu-inset rounded-xl font-medium">
           ← Swipe to scroll table →
         </div>
 
-        {/* Table container with horizontal scroll - improved for mobile */}
-        <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm -mx-4 sm:mx-0 px-4 sm:px-0">
-          <table className="w-full" style={{ minWidth: "800px" }}>
-            {/* Table Header */}
-            <thead className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b-2 border-gray-200 sticky top-0 z-10">
-              <tr>
-                <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap min-w-[200px]">
-                  📌 Title
-                </th>
-                <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap min-w-[150px]">
-                  📚 Subject
-                </th>
-                <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap min-w-[130px]">
-                  Semester
-                </th>
-                <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap min-w-[160px]">
-                  📖 Resource Type
-                </th>
-                {showActions && (
-                  <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap sticky right-0 bg-gradient-to-r from-indigo-50 to-purple-50 z-10 min-w-[200px]">
-                    ⚙️ Actions
-                  </th>
-                )}
-              </tr>
-            </thead>
-
-            {/* Table Body */}
-            <tbody>
-              {resources.map((resource, index) => (
-                <React.Fragment key={resource._id}>
+        {/* Table container — shadow wrapper + clip wrapper */}
+        <div style={{ boxShadow: "var(--neu-raised)" }}>
+          <div
+            className="rounded-2xl overflow-hidden -mx-4 sm:mx-0"
+            style={{
+              border: "1px solid rgba(184, 192, 204, 0.5)",
+            }}
+          >
+            <div className="overflow-x-auto">
+              <table
+                className="w-full"
+                style={{
+                  minWidth: "800px",
+                  borderCollapse: "separate",
+                  borderSpacing: 0,
+                }}
+              >
+                {/* Table Header */}
+                <thead>
                   <tr
-                    onClick={() => {
-                      // Show popup on mobile only
-                      if (window.innerWidth < 768) {
-                        setMobileActionPopup(resource);
-                      }
+                    style={{
+                      boxShadow: "inset 0 -1px 0 rgba(184, 192, 204, 0.6)",
                     }}
-                    className={`border-b border-gray-200 transition-colors sm:hover:bg-indigo-50 sm:cursor-default cursor-pointer ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    }`}
                   >
-                    {/* Title */}
-                    <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">
-                      <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-wrap">
-                        <span className="line-clamp-2 overflow-hidden">
-                          {resource.title}
-                        </span>
-                        {resource.imageGroupId && (
-                          <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0">
-                            📦 x{resource.imageGroupCount || 1}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Subject */}
-                    <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 min-w-[150px]">
-                      <span className="line-clamp-1">{resource.subject}</span>
-                    </td>
-
-                    {/* Semester */}
-                    <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 min-w-[130px]">
-                      <span className="inline-block px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium text-xs">
-                        {resource.semester}
-                      </span>
-                    </td>
-
-                    {/* Resource Type */}
-                    <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 min-w-[160px]">
-                      <span className="inline-block px-2 sm:px-3 py-1 bg-purple-100 text-purple-800 rounded-full font-medium text-xs">
-                        {resource.resourceType}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[200px]">
+                      Title
+                    </th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[150px]">
+                      Subject
+                    </th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[130px]">
+                      Semester
+                    </th>
+                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[160px]">
+                      Resource Type
+                    </th>
                     {showActions && (
-                      <td className="px-2 sm:px-4 md:px-6 py-3 sm:py-4 sticky right-0 bg-white z-10 min-w-[220px] border-l-2 border-gray-100">
-                        <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
-                          <button
-                            onClick={() => handleDownload(resource)}
-                            className="px-2 sm:px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 active:scale-95 text-xs sm:text-sm whitespace-nowrap min-h-10 sm:min-h-10 shadow-md"
-                            title="Download resource"
-                          >
-                            <span className="hidden sm:inline">
-                              📥 Download
-                            </span>
-                            <span className="sm:hidden">📥</span>
-                          </button>
-                          <button
-                            onClick={() => handleViewDetails(resource)}
-                            className="px-2 sm:px-3 py-2 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all duration-300 active:scale-95 text-xs sm:text-sm whitespace-nowrap min-h-10 sm:min-h-10 shadow-md"
-                            title="View details"
-                          >
-                            <span className="hidden sm:inline">ℹ️ Info</span>
-                            <span className="sm:hidden">ℹ️</span>
-                          </button>
-                          {onDelete && (
-                            <button
-                              onClick={() => onDelete(resource._id)}
-                              disabled={isDeleting}
-                              className={`px-2 sm:px-3 py-2 font-bold rounded-lg transition-all duration-300 active:scale-95 text-xs sm:text-sm whitespace-nowrap min-h-10 sm:min-h-10 shadow-md ${
-                                isDeleting
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                                  : "bg-red-100 text-red-700 hover:bg-red-200"
-                              }`}
-                              title="Delete resource"
-                            >
-                              <span className="hidden sm:inline">
-                                {isDeleting ? "⏳ Deleting..." : "🗑️ Delete"}
-                              </span>
-                              <span className="sm:hidden">🗑️</span>
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                      <th
+                        className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[200px]"
+                        style={{
+                          borderLeft: "1px solid rgba(184, 192, 204, 0.5)",
+                          boxShadow: "inset 0 -1px 0 rgba(184, 192, 204, 0.6)",
+                        }}
+                      >
+                        Actions
+                      </th>
                     )}
                   </tr>
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
+                </thead>
+
+                {/* Table Body */}
+                <tbody>
+                  {resources.map((resource, index) => (
+                    <React.Fragment key={resource._id}>
+                      <tr
+                        onClick={() => {
+                          if (window.innerWidth < 768) {
+                            setMobileActionPopup(resource);
+                          }
+                        }}
+                        className="transition-colors sm:cursor-default cursor-pointer"
+                        style={{
+                          boxShadow: "inset 0 -1px 0 rgba(184, 192, 204, 0.5)",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (window.innerWidth >= 640)
+                            e.currentTarget.style.backgroundColor =
+                              "var(--neu-bg-dark)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "";
+                        }}
+                      >
+                        {/* Title */}
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-700 min-w-[200px]">
+                          <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-wrap">
+                            <span className="line-clamp-2 overflow-hidden">
+                              {resource.title}
+                            </span>
+                            {resource.imageGroupId && (
+                              <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0">
+                                x{resource.imageGroupCount || 1} files
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Subject */}
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 min-w-[150px]">
+                          <span className="line-clamp-1">
+                            {resource.subject}
+                          </span>
+                        </td>
+
+                        {/* Semester */}
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 min-w-[130px]">
+                          <span className="inline-block px-2 sm:px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full font-medium text-xs">
+                            {resource.semester}
+                          </span>
+                        </td>
+
+                        {/* Resource Type */}
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 min-w-[160px]">
+                          <span className="inline-block px-2 sm:px-3 py-1 bg-violet-100 text-violet-700 rounded-full font-medium text-xs">
+                            {resource.resourceType}
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        {showActions && (
+                          <td
+                            className="px-2 sm:px-4 md:px-6 py-3 sm:py-4 min-w-[220px]"
+                            style={{
+                              borderLeft: "1px solid rgba(184, 192, 204, 0.5)",
+                              boxShadow:
+                                "inset 0 -1px 0 rgba(184, 192, 204, 0.5)",
+                            }}
+                          >
+                            <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
+                              <button
+                                onClick={() => handleDownload(resource)}
+                                className="neu-btn-primary px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap"
+                                title="Download resource"
+                              >
+                                <span className="hidden sm:inline">
+                                  Download
+                                </span>
+                                <span className="sm:hidden">↓</span>
+                              </button>
+                              <button
+                                onClick={() => handleViewDetails(resource)}
+                                className="neu-btn px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap text-indigo-600"
+                                title="View details"
+                              >
+                                <span className="hidden sm:inline">Info</span>
+                                <span className="sm:hidden">i</span>
+                              </button>
+                              {onDelete && (
+                                <button
+                                  onClick={() => onDelete(resource._id)}
+                                  disabled={isDeleting}
+                                  className={`px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 ${
+                                    isDeleting
+                                      ? "opacity-50 cursor-not-allowed neu-btn text-slate-400"
+                                      : "neu-btn-danger"
+                                  }`}
+                                  title="Delete resource"
+                                >
+                                  <span className="hidden sm:inline">
+                                    {isDeleting ? "Deleting..." : "Delete"}
+                                  </span>
+                                  <span className="sm:hidden">✕</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Detail Modal */}
       {selectedResource && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4 overflow-hidden">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto animate-slideUp">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 sm:p-4 md:p-6 flex justify-between items-start gap-2 sm:gap-3">
+          <div
+            className="rounded-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scrollbar-none animate-slideUp"
+            style={{
+              backgroundColor: "var(--neu-bg)",
+            }}
+          >
+            {/* Modal Header — keep indigo accent for contrast */}
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 sm:p-4 md:p-6 flex justify-between items-start gap-2 sm:gap-3 rounded-t-2xl">
               <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -296,7 +344,7 @@ const ResourceTable = ({
                     </h2>
                     {selectedResource.imageGroupId && (
                       <span className="inline-block px-2 py-1 bg-white/30 text-white rounded-full text-xs font-bold whitespace-nowrap">
-                        📦 {selectedResource.imageGroupCount || 1} images
+                        {selectedResource.imageGroupCount || 1} images
                       </span>
                     )}
                   </div>
@@ -316,32 +364,32 @@ const ResourceTable = ({
               {/* Basic Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                 <div className="min-w-0">
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
-                    📚 Subject
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block">
+                    Subject
                   </label>
-                  <p className="text-gray-900 font-medium text-sm sm:text-base md:text-lg mt-1 break-words">
+                  <p className="text-slate-700 font-medium text-sm sm:text-base md:text-lg mt-1 break-words">
                     {selectedResource.subject}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block">
                     Semester
                   </label>
-                  <p className="text-gray-900 font-medium text-sm sm:text-base md:text-lg mt-1 break-words">
+                  <p className="text-slate-700 font-medium text-sm sm:text-base md:text-lg mt-1 break-words">
                     {selectedResource.semester}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
-                    📖 Resource Type
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block">
+                    Resource Type
                   </label>
-                  <p className="text-gray-900 font-medium text-sm sm:text-base md:text-lg mt-1 break-words">
+                  <p className="text-slate-700 font-medium text-sm sm:text-base md:text-lg mt-1 break-words">
                     {selectedResource.resourceType}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block">
-                    📄 File Type
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block">
+                    File Type
                   </label>
                   <p className="mt-1">
                     <span
@@ -354,57 +402,57 @@ const ResourceTable = ({
               </div>
 
               {/* Divider */}
-              <hr className="border-gray-200" />
+              <hr className="border-slate-300/50" />
 
               {/* Description */}
               <div className="min-w-0">
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2">
-                  📝 Description
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">
+                  Description
                 </label>
-                <p className="text-xs sm:text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 sm:p-4 rounded-lg break-words">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed neu-inset rounded-xl p-3 sm:p-4 break-words">
                   {selectedResource.description}
                 </p>
               </div>
 
               {/* Upload Details */}
               <div className="min-w-0">
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2 sm:mb-3">
-                  ℹ️ Upload Details
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2 sm:mb-3">
+                  Upload Details
                 </label>
-                <div className="space-y-2 sm:space-y-3 bg-gray-50 p-3 sm:p-4 rounded-lg">
+                <div className="space-y-2 sm:space-y-3 neu-inset rounded-xl p-3 sm:p-4">
                   {isAdmin && (
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 min-w-0">
-                      <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
-                        👤 Uploaded By:
+                      <span className="text-xs sm:text-sm text-slate-500 font-medium flex-shrink-0">
+                        Uploaded By:
                       </span>
                       <div className="sm:text-right min-w-0">
-                        <p className="font-semibold text-xs sm:text-sm text-gray-900 break-words">
+                        <p className="font-semibold text-xs sm:text-sm text-slate-700 break-words">
                           {selectedResource.uploadedBy?.name || "Unknown"}
                         </p>
-                        <p className="text-xs text-gray-600 break-words">
+                        <p className="text-xs text-slate-500 break-words">
                           {selectedResource.uploadedBy?.email || "N/A"}
                         </p>
                       </div>
                     </div>
                   )}
                   <div
-                    className={`${isAdmin ? "border-t border-gray-200 pt-2 sm:pt-3" : ""} flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 min-w-0`}
+                    className={`${isAdmin ? "border-t border-slate-300/50 pt-2 sm:pt-3" : ""} flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 min-w-0`}
                   >
-                    <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
-                      📆 Upload Date:
+                    <span className="text-xs sm:text-sm text-slate-500 font-medium flex-shrink-0">
+                      Upload Date:
                     </span>
-                    <p className="font-semibold text-xs sm:text-sm text-gray-900 sm:text-right break-words">
+                    <p className="font-semibold text-xs sm:text-sm text-slate-700 sm:text-right break-words">
                       {formatFullDate(selectedResource.createdAt)}
                     </p>
                   </div>
-                  <div className="border-t border-gray-200 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                    <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
-                      📦 File Size:
+                  <div className="border-t border-slate-300/50 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                    <span className="text-xs sm:text-sm text-slate-500 font-medium flex-shrink-0">
+                      File Size:
                     </span>
                     <div className="text-right">
                       {selectedResource.imageGroupId ? (
                         <div className="space-y-1">
-                          <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                          <p className="font-semibold text-xs sm:text-sm text-slate-700">
                             {(
                               getGroupTotalSize(selectedResource) /
                               1024 /
@@ -412,7 +460,7 @@ const ResourceTable = ({
                             ).toFixed(2)}{" "}
                             MB
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-slate-500">
                             {getGroupFileCount(selectedResource)} file
                             {getGroupFileCount(selectedResource) !== 1
                               ? "s"
@@ -420,7 +468,7 @@ const ResourceTable = ({
                           </p>
                         </div>
                       ) : (
-                        <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                        <p className="font-semibold text-xs sm:text-sm text-slate-700">
                           {(selectedResource.fileSize / 1024 / 1024).toFixed(2)}{" "}
                           MB
                         </p>
@@ -429,29 +477,26 @@ const ResourceTable = ({
                   </div>
                   {/* Group Information */}
                   {selectedResource.imageGroupId && (
-                    <div className="border-t border-gray-200 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                      <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
-                        📸 Image Group:
+                    <div className="border-t border-slate-300/50 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                      <span className="text-xs sm:text-sm text-slate-500 font-medium flex-shrink-0">
+                        Image Group:
                       </span>
                       <div className="text-right">
-                        <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                        <p className="font-semibold text-xs sm:text-sm text-slate-700">
                           {getGroupFileCount(selectedResource)} image
                           {getGroupFileCount(selectedResource) !== 1
                             ? "s"
                             : ""}{" "}
                           grouped
                         </p>
-                        <p className="text-xs text-gray-600">
-                          All images will be downloaded as a zip file
-                        </p>
                       </div>
                     </div>
                   )}
-                  <div className="border-t border-gray-200 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                    <span className="text-xs sm:text-sm text-gray-600 font-medium flex-shrink-0">
-                      👁️ Views:
+                  <div className="border-t border-slate-300/50 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                    <span className="text-xs sm:text-sm text-slate-500 font-medium flex-shrink-0">
+                      Views:
                     </span>
-                    <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                    <p className="font-semibold text-xs sm:text-sm text-slate-700">
                       {selectedResource.views || 0}
                     </p>
                   </div>
@@ -460,13 +505,15 @@ const ResourceTable = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-gray-50 border-t border-gray-200 p-3 sm:p-4 md:p-6">
+            <div
+              className="border-t border-slate-300/50 p-3 sm:p-4 md:p-6"
+              style={{ backgroundColor: "var(--neu-bg)" }}
+            >
               <button
                 onClick={() => handleDownload(selectedResource)}
-                className="w-full px-3 sm:px-6 py-4 sm:py-5 md:py-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 active:scale-95 text-xs sm:text-base"
+                className="neu-btn-primary w-full py-4 sm:py-5 rounded-xl font-bold text-xs sm:text-base"
               >
-                <span className="hidden sm:inline">📥 Download</span>
-                <span className="sm:hidden">📥 Download</span>
+                Download
               </button>
             </div>
           </div>
@@ -476,15 +523,20 @@ const ResourceTable = ({
       {/* Mobile Action Popup */}
       {mobileActionPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50 sm:hidden">
-          <div className="bg-white rounded-t-3xl w-full animate-slideUp shadow-2xl">
+          <div
+            className="rounded-t-3xl w-full animate-slideUp"
+            style={{
+              backgroundColor: "var(--neu-bg)",
+            }}
+          >
             {/* Popup Header */}
-            <div className="px-4 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="font-bold text-gray-900 text-lg line-clamp-2 flex-1">
+            <div className="px-4 py-4 border-b border-slate-300/50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-700 text-lg line-clamp-2 flex-1">
                 {mobileActionPopup.title}
               </h3>
               <button
                 onClick={() => setMobileActionPopup(null)}
-                className="text-2xl text-gray-500 hover:text-gray-700 font-bold"
+                className="text-2xl text-slate-500 hover:text-slate-700 font-bold"
                 title="Close"
               >
                 ✕
@@ -498,10 +550,9 @@ const ResourceTable = ({
                   handleDownload(mobileActionPopup);
                   setMobileActionPopup(null);
                 }}
-                className="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 shadow-md"
+                className="neu-btn-primary w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2"
                 title="Download resource"
               >
-                <span className="text-xl">📥</span>
                 <span>Download</span>
               </button>
               <button
@@ -509,10 +560,9 @@ const ResourceTable = ({
                   handleViewDetails(mobileActionPopup);
                   setMobileActionPopup(null);
                 }}
-                className="w-full px-4 py-3 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 shadow-md"
+                className="neu-btn text-indigo-600 w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2"
                 title="View details"
               >
-                <span className="text-xl">ℹ️</span>
                 <span>View Details</span>
               </button>
               {onDelete && (
@@ -522,14 +572,13 @@ const ResourceTable = ({
                     setMobileActionPopup(null);
                   }}
                   disabled={isDeleting}
-                  className={`w-full px-4 py-3 font-bold rounded-lg transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 shadow-md ${
+                  className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 ${
                     isDeleting
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                      : "bg-red-100 text-red-700 hover:bg-red-200"
+                      ? "opacity-50 cursor-not-allowed neu-btn text-slate-400"
+                      : "neu-btn-danger"
                   }`}
                   title="Delete resource"
                 >
-                  <span className="text-xl">🗑️</span>
                   <span>{isDeleting ? "Deleting..." : "Delete"}</span>
                 </button>
               )}

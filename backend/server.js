@@ -24,6 +24,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
+import compression from "compression";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
@@ -64,6 +65,12 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+    exposedHeaders: [
+      "Content-Length",
+      "Content-Type",
+      "Content-Disposition",
+      "X-Content-Type-Options",
+    ], // Allow frontend to read download response headers
   }),
 );
 
@@ -85,6 +92,22 @@ app.use(cookieParser());
 // 5. Request size limits
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// 6. Compression middleware for faster downloads
+// Compresses responses larger than 1KB
+app.use(
+  compression({
+    level: 6, // Balanced compression level (0-9, default 6)
+    threshold: 1024, // Only compress responses larger than 1KB
+    filter: (req, res) => {
+      // Skip compression for streaming/download endpoints (they handle their own compression)
+      if (req.path.includes("/download")) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  }),
+);
 
 // ========== ROUTES ==========
 app.use("/api/auth", authRoutes);

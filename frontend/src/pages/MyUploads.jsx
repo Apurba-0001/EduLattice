@@ -151,21 +151,21 @@ const MyUploads = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-6 sm:py-8 md:py-12 px-4 sm:px-6 animate-fadeIn">
+    <div className="min-h-screen neu-bg py-6 sm:py-8 md:py-12 px-4 sm:px-6 animate-fadeIn">
       <div className="container max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="mb-8 sm:mb-10 md:mb-12 animate-slideDown">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-700 mb-2 sm:mb-3 leading-tight">
             My Uploads
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg text-slate-500 leading-relaxed">
             Manage and track all your shared resources
           </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-8 sm:mb-10 p-4 sm:p-5 bg-red-50 border-l-4 border-red-500 rounded-xl animate-slideDown">
+          <div className="mb-8 sm:mb-10 p-4 sm:p-5 neu-inset border-l-4 border-red-400 rounded-xl animate-slideDown">
             <p className="text-red-700 font-medium text-sm sm:text-base leading-relaxed">
               ⚠️ {error}
             </p>
@@ -177,10 +177,9 @@ const MyUploads = () => {
           <div className="flex justify-center items-center py-16 sm:py-24">
             <div className="flex flex-col items-center gap-4 sm:gap-5">
               <div className="relative w-14 h-14 sm:w-16 sm:h-16">
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full animate-spin"></div>
-                <div className="absolute inset-2 bg-white rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-slate-300 border-t-indigo-500 rounded-full animate-spin"></div>
               </div>
-              <p className="text-gray-600 font-medium text-sm sm:text-base">
+              <p className="text-slate-500 font-medium text-sm sm:text-base">
                 Loading your uploads...
               </p>
             </div>
@@ -197,16 +196,16 @@ const MyUploads = () => {
         ) : (
           <div className="text-center py-16 sm:py-24 animate-slideUp">
             <div className="text-6xl sm:text-7xl mb-4 sm:mb-5">📤</div>
-            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+            <h3 className="text-2xl sm:text-3xl font-bold text-slate-700 mb-3 sm:mb-4">
               No uploads yet
             </h3>
-            <p className="text-gray-700 mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed px-4 max-w-md mx-auto">
+            <p className="text-slate-500 mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed px-4 max-w-md mx-auto">
               Start sharing your knowledge by uploading resources to help your
               classmates
             </p>
             <a
               href="/upload"
-              className="inline-flex px-8 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:shadow-lg active:scale-95 shadow-lg text-sm sm:text-base min-h-[48px] items-center justify-center"
+              className="inline-flex neu-btn-primary px-8 sm:px-10 py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base items-center justify-center"
             >
               ➕ Upload Your First Resource
             </a>

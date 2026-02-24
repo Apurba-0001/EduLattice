@@ -1,244 +1,410 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
+    setMobileMenuOpen(false);
     navigate("/login");
-  };
-
-  const handleNameClick = () => {
-    setShowProfileModal(true);
   };
 
   const handleCloseModal = () => {
     setShowProfileModal(false);
   };
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  const isActive = (path) => location.pathname === path;
+
+  const navLinkClass = (path) =>
+    `flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+      isActive(path)
+        ? "shadow-neu-inset text-indigo-600"
+        : "text-slate-600 hover:text-indigo-600"
+    }`;
+
+  const mobileNavLinkClass = (path) =>
+    `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+      isActive(path)
+        ? "shadow-neu-inset text-indigo-600"
+        : "text-slate-600 hover:text-indigo-600"
+    }`;
+
   return (
     <>
-      <nav className="bg-white shadow-lg sticky top-0 z-50 animate-slideDown">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 xl:px-6">
-          <div className="flex justify-between items-center h-auto py-1 sm:py-1.5 md:py-2 xl:py-1.5 flex-wrap gap-2 sm:gap-2 md:gap-3 xl:gap-3">
+      {/* ── NAVBAR ── */}
+      <nav
+        className="sticky top-0 z-50"
+        style={{
+          backgroundColor: "var(--neu-bg)",
+          boxShadow:
+            "0 4px 12px var(--neu-shadow-dark), 0 -1px 4px var(--neu-shadow-light)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-14">
             {/* Logo */}
             <Link
               to="/"
-              className="flex items-center gap-1 sm:gap-2 md:gap-2.5 xl:gap-2 hover:opacity-80 transition-opacity duration-300 flex-shrink-0"
+              className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity duration-200"
             >
               <img
                 src="/logo.png"
                 alt="EduLattice Logo"
-                className="h-24 sm:h-26 md:h-28 lg:h-30 xl:h-28 w-auto"
+                className="h-[52px] w-auto"
               />
-              <span
-                className="hidden sm:inline text-xl sm:text-2xl md:text-2xl lg:text-3xl xl:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
-                style={{
-                  fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
-                }}
-              >
+              <span className="hidden sm:block text-lg font-extrabold text-slate-700 tracking-tight">
                 EduLattice
               </span>
             </Link>
 
-            {/* Navigation Links - Visible on all screen sizes */}
-            <div className="flex items-center gap-2 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-4 flex-wrap justify-center">
+            {/* ── DESKTOP NAV ── */}
+            <div className="hidden md:flex items-center gap-1">
               {user ? (
                 <>
-                  <Link
-                    to="/dashboard"
-                    className="hidden sm:flex flex-col items-center justify-center gap-1 md:gap-1.5 xl:gap-1 p-2 md:p-2.5 xl:p-2 text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200 rounded-lg hover:bg-indigo-50"
-                  >
-                    <span className="text-2xl md:text-3xl xl:text-2xl">📊</span>
-                    <span className="text-xs sm:text-sm md:text-sm xl:text-sm whitespace-nowrap">
-                      Dashboard
-                    </span>
+                  <Link to="/dashboard" className={navLinkClass("/dashboard")}>
+                    <span>📊</span> Dashboard
                   </Link>
-                  <Link
-                    to="/upload"
-                    className="flex flex-col items-center justify-center gap-1 md:gap-1.5 xl:gap-1 p-2 md:p-2.5 xl:p-2 text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200 rounded-lg hover:bg-indigo-50"
-                  >
-                    <span className="text-2xl md:text-3xl xl:text-2xl">📤</span>
-                    <span className="text-xs sm:text-sm md:text-sm xl:text-sm whitespace-nowrap">
-                      Upload
-                    </span>
+                  <Link to="/upload" className={navLinkClass("/upload")}>
+                    <span>📤</span> Upload
                   </Link>
                   <Link
                     to="/my-uploads"
-                    className="flex flex-col items-center justify-center gap-1 md:gap-1.5 xl:gap-1 p-2 md:p-2.5 xl:p-2 text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200 rounded-lg hover:bg-indigo-50"
+                    className={navLinkClass("/my-uploads")}
                   >
-                    <span className="text-2xl md:text-3xl xl:text-2xl">📁</span>
-                    <span className="text-xs sm:text-sm md:text-sm xl:text-sm whitespace-nowrap">
-                      My Uploads
-                    </span>
+                    <span>📁</span> My Uploads
                   </Link>
                   {isAdmin && (
-                    <Link
-                      to="/admin"
-                      className="flex flex-col items-center justify-center gap-1 md:gap-1.5 xl:gap-1 p-2 md:p-2.5 xl:p-2 text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200 rounded-lg hover:bg-indigo-50"
-                    >
-                      <span className="text-2xl md:text-3xl xl:text-2xl">
-                        🔑
-                      </span>
-                      <span className="text-xs sm:text-sm md:text-sm xl:text-sm whitespace-nowrap">
-                        Admin
-                      </span>
+                    <Link to="/admin" className={navLinkClass("/admin")}>
+                      <span>🔑</span> Admin
                     </Link>
                   )}
-
-                  {/* User Profile Button */}
+                  {/* Profile pill */}
                   <button
-                    onClick={handleNameClick}
-                    className="flex flex-col items-center justify-center gap-1 md:gap-1.5 xl:gap-1 px-2 md:px-2.5 xl:px-2 py-2 md:py-2.5 xl:py-2 text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200 rounded-lg hover:bg-indigo-50"
+                    onClick={() => setShowProfileModal(true)}
+                    className="flex items-center gap-2 ml-2 pl-3 pr-4 py-1.5 rounded-full text-sm font-semibold text-slate-700 transition-all duration-200"
+                    style={{ boxShadow: "var(--neu-raised-sm)" }}
                   >
-                    <span className="text-2xl md:text-3xl xl:text-2xl">👤</span>
-                    <span className="text-xs md:text-sm xl:text-sm whitespace-nowrap">
-                      Profile
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold uppercase text-white"
+                      style={{
+                        background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                      }}
+                    >
+                      {user.name?.[0] || "U"}
                     </span>
+                    <span className="max-w-[100px] truncate">{user.name}</span>
                   </button>
                 </>
               ) : (
                 <>
                   <Link
                     to="/login"
-                    className="flex flex-col items-center justify-center gap-1 md:gap-1.5 xl:gap-1 px-3 md:px-4 xl:px-4 py-2 md:py-2.5 xl:py-2 text-indigo-600 font-semibold border-2 border-indigo-600 rounded-lg hover:bg-indigo-50 transition-all duration-300 transform hover:scale-105 active:scale-95"
+                    className="px-4 py-1.5 text-sm font-semibold text-slate-600 rounded-lg hover:text-indigo-600 transition-all duration-200"
+                    style={{ boxShadow: "var(--neu-raised-sm)" }}
                   >
-                    <span className="text-2xl md:text-3xl xl:text-2xl">🔐</span>
-                    <span className="text-xs md:text-sm xl:text-sm whitespace-nowrap">
-                      Login
-                    </span>
+                    Login
                   </Link>
                   <Link
                     to="/register"
-                    className="flex flex-col items-center justify-center gap-1 md:gap-1.5 xl:gap-1 px-3 md:px-4 xl:px-4 py-2 md:py-2.5 xl:py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg"
+                    className="ml-2 px-4 py-1.5 text-sm font-semibold text-white rounded-lg transition-all duration-200"
+                    style={{
+                      background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                      boxShadow:
+                        "4px 4px 10px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)",
+                    }}
                   >
-                    <span className="text-2xl md:text-3xl xl:text-2xl">✍️</span>
-                    <span className="text-xs md:text-sm xl:text-sm whitespace-nowrap">
-                      Register
-                    </span>
+                    Register
                   </Link>
                 </>
               )}
+            </div>
+
+            {/* ── MOBILE: right side ── */}
+            <div className="flex md:hidden items-center gap-2">
+              {user && (
+                <button
+                  onClick={() => {
+                    setShowProfileModal(true);
+                    closeMobileMenu();
+                  }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white uppercase"
+                  style={{
+                    background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                    boxShadow: "var(--neu-raised-sm)",
+                  }}
+                >
+                  {user.name?.[0] || "U"}
+                </button>
+              )}
+              {/* Hamburger */}
+              <button
+                onClick={() => setMobileMenuOpen((o) => !o)}
+                aria-label="Toggle menu"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 transition-colors duration-200"
+                style={{
+                  boxShadow: mobileMenuOpen
+                    ? "var(--neu-inset-sm)"
+                    : "var(--neu-raised-sm)",
+                }}
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  {mobileMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Profile Modal */}
+      {/* ── MOBILE FLOATING MENU ── */}
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:hidden"
+            onClick={closeMobileMenu}
+          />
+          <div
+            className="fixed top-14 right-3 z-50 md:hidden w-72 rounded-2xl overflow-hidden animate-slideDown"
+            style={{
+              backgroundColor: "var(--neu-bg)",
+              boxShadow: "var(--neu-raised-lg)",
+            }}
+          >
+            {user ? (
+              <>
+                {/* User info strip */}
+                <div
+                  className="flex items-center gap-3 px-4 py-4"
+                  style={{
+                    background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                  }}
+                >
+                  <div className="w-10 h-10 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-bold uppercase text-sm flex-shrink-0">
+                    {user.name?.[0] || "U"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-indigo-200 truncate">
+                      {user.email}
+                    </p>
+                    {isAdmin && (
+                      <span className="inline-block mt-0.5 text-xs font-bold text-amber-300">
+                        🔑 Admin
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-2 space-y-0.5">
+                  <Link
+                    to="/dashboard"
+                    onClick={closeMobileMenu}
+                    className={mobileNavLinkClass("/dashboard")}
+                  >
+                    <span>📊</span> Dashboard
+                  </Link>
+                  <Link
+                    to="/upload"
+                    onClick={closeMobileMenu}
+                    className={mobileNavLinkClass("/upload")}
+                  >
+                    <span>📤</span> Upload
+                  </Link>
+                  <Link
+                    to="/my-uploads"
+                    onClick={closeMobileMenu}
+                    className={mobileNavLinkClass("/my-uploads")}
+                  >
+                    <span>📁</span> My Uploads
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      onClick={closeMobileMenu}
+                      className={mobileNavLinkClass("/admin")}
+                    >
+                      <span>🔑</span> Admin Panel
+                    </Link>
+                  )}
+                </div>
+
+                <div
+                  className="px-2 pb-2 pt-1"
+                  style={{ borderTop: "1px solid var(--neu-shadow-dark)" }}
+                >
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-500 transition-all duration-200 hover:text-red-600"
+                    style={{ boxShadow: "var(--neu-raised-sm)" }}
+                  >
+                    <span>🚪</span> Logout
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="p-2 space-y-1">
+                <Link
+                  to="/login"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-all duration-200"
+                  style={{ boxShadow: "var(--neu-raised-sm)" }}
+                >
+                  🔐 Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200"
+                  style={{
+                    background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                    boxShadow: "4px 4px 10px var(--neu-shadow-dark)",
+                  }}
+                >
+                  ✍️ Register
+                </Link>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── PROFILE MODAL ── */}
       {showProfileModal && user && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000] p-2 sm:p-4 md:p-6 xl:p-8 animate-fadeIn"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 animate-fadeIn"
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 xl:p-12 w-full max-w-md lg:max-w-4xl xl:max-w-5xl max-h-[90vh] lg:max-h-none lg:h-auto overflow-y-auto lg:overflow-y-visible animate-slideUp"
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl animate-slideUp"
+            style={{
+              backgroundColor: "var(--neu-bg)",
+              boxShadow: "var(--neu-raised-lg)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold text-gray-900">
-                My Profile
-              </h2>
+            {/* Modal header */}
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: "1px solid var(--neu-shadow-dark)" }}
+            >
+              <h2 className="text-lg font-bold text-slate-700">My Profile</h2>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-400 hover:text-gray-600 text-2xl md:text-3xl xl:text-4xl transition-colors duration-200"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 transition-colors duration-200 text-lg"
+                style={{ boxShadow: "var(--neu-raised-sm)" }}
               >
                 ✕
               </button>
             </div>
 
-            {/* Profile Content - Landscape layout on desktop */}
-            <div className="flex flex-col lg:flex-row gap-6 md:gap-7 lg:gap-8 xl:gap-10 mb-6">
-              {/* Left side - Avatar Card */}
-              <div className="lg:flex-shrink-0">
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 sm:p-6 md:p-7 xl:p-8">
-                  <div className="flex lg:flex-col items-center gap-4 md:gap-5 xl:gap-6">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 xl:w-24 xl:h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl shadow-lg flex-shrink-0">
-                      👤
-                    </div>
-                    <div className="lg:text-center">
-                      <h3 className="text-base sm:text-lg md:text-xl lg:text-xl xl:text-2xl font-bold text-gray-900">
-                        {user.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm md:text-base xl:text-lg text-gray-600 break-all">
-                        {user.email}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* Avatar section */}
+            <div
+              className="px-6 py-6 flex items-center gap-4"
+              style={{ boxShadow: "var(--neu-inset-sm)" }}
+            >
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white uppercase flex-shrink-0"
+                style={{
+                  background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                  boxShadow: "var(--neu-raised-sm)",
+                }}
+              >
+                {user.name?.[0] || "U"}
               </div>
-
-              {/* Right side - Profile Info Grid */}
-              <div className="flex-1">
-                <div className="space-y-4 md:space-y-5 xl:space-y-6">
-                  <div className="border-b border-gray-200 pb-4 md:pb-5 xl:pb-6">
-                    <label className="text-xs md:text-sm xl:text-base font-bold text-gray-500 uppercase tracking-wide">
-                      Email
-                    </label>
-                    <p className="text-gray-900 font-medium mt-1 text-sm sm:text-base md:text-lg xl:text-xl break-all">
-                      {user.email}
-                    </p>
-                  </div>
-
-                  <div className="border-b border-gray-200 pb-4 md:pb-5 xl:pb-6">
-                    <label className="text-xs md:text-sm xl:text-base font-bold text-gray-500 uppercase tracking-wide">
-                      Full Name
-                    </label>
-                    <p className="text-gray-900 font-medium mt-1 text-sm sm:text-base md:text-lg xl:text-xl">
-                      {user.name}
-                    </p>
-                  </div>
-
-                  <div className="border-b border-gray-200 pb-4 md:pb-5 xl:pb-6">
-                    <label className="text-xs md:text-sm xl:text-base font-bold text-gray-500 uppercase tracking-wide">
-                      Date Joined
-                    </label>
-                    <p className="text-gray-900 font-medium mt-1 text-sm sm:text-base md:text-lg xl:text-xl">
-                      {user.createdAt
-                        ? new Date(user.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : "N/A"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-xs md:text-sm xl:text-base font-bold text-gray-500 uppercase tracking-wide">
-                      Status
-                    </label>
-                    <div className="mt-1">
-                      {isAdmin ? (
-                        <span className="inline-flex items-center gap-2 md:gap-2.5 xl:gap-3 px-3 md:px-4 xl:px-5 py-1 md:py-1.5 xl:py-2 bg-green-100 text-green-700 rounded-full font-semibold text-xs sm:text-sm md:text-base xl:text-lg">
-                          <span>🔑</span> Admin User
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-2 md:gap-2.5 xl:gap-3 px-3 md:px-4 xl:px-5 py-1 md:py-1.5 xl:py-2 bg-blue-100 text-blue-700 rounded-full font-semibold text-xs sm:text-sm md:text-base xl:text-lg">
-                          <span>👤</span> Regular User
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              <div className="min-w-0">
+                <p className="text-base font-bold text-slate-700 truncate">
+                  {user.name}
+                </p>
+                <p className="text-sm text-slate-500 break-all">{user.email}</p>
+                <span
+                  className={`inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${isAdmin ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"}`}
+                >
+                  {isAdmin ? "🔑 Admin" : "👤 Student"}
+                </span>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col lg:flex-row gap-3 md:gap-4 xl:gap-5 w-full">
+            {/* Info rows */}
+            <div className="px-6 py-4 space-y-3">
+              {[
+                { label: "Full Name", value: user.name },
+                { label: "Email", value: user.email },
+                {
+                  label: "Joined",
+                  value: user.createdAt
+                    ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : "N/A",
+                },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="flex justify-between items-center py-2"
+                  style={{ borderBottom: "1px solid var(--neu-shadow-dark)" }}
+                >
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+                    {label}
+                  </span>
+                  <span className="text-sm font-medium text-slate-700 break-all text-right max-w-[200px]">
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Action buttons */}
+            <div className="px-6 pb-6 flex gap-3">
               <button
                 onClick={handleLogout}
-                className="flex-1 py-2 sm:py-3 md:py-3.5 xl:py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg text-sm sm:text-base md:text-lg xl:text-xl"
+                className="flex-1 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 active:scale-95"
+                style={{
+                  background: "linear-gradient(135deg,#ef4444,#dc2626)",
+                  boxShadow:
+                    "4px 4px 10px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)",
+                }}
               >
                 🚪 Logout
               </button>
               <button
                 onClick={handleCloseModal}
-                className="flex-1 py-2 sm:py-3 md:py-3.5 xl:py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg text-sm sm:text-base md:text-lg xl:text-xl"
+                className="flex-1 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 active:scale-95"
+                style={{
+                  background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                  boxShadow:
+                    "4px 4px 10px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)",
+                }}
               >
                 Close
               </button>

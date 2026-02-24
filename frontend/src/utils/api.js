@@ -13,8 +13,11 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear user data on unauthorized access
+    const isAuthEndpoint =
+      error.config?.url?.includes("/auth/login") ||
+      error.config?.url?.includes("/auth/register");
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Clear user data on unauthorized access (only for protected routes)
       localStorage.removeItem("user");
       // Redirect to login
       window.location.href = "/login";

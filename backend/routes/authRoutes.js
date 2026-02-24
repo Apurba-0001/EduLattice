@@ -15,9 +15,12 @@ const router = express.Router();
 // Rate limiting for auth endpoints - prevent brute force attacks
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
-  message:
-    "Too many authentication attempts from this IP, please try again after 15 minutes",
+  max: process.env.NODE_ENV === "production" ? 10 : 100, // Relaxed in dev
+  message: {
+    success: false,
+    message:
+      "Too many authentication attempts. Please try again after 15 minutes.",
+  },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
 });
