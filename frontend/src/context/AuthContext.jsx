@@ -52,12 +52,16 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await api.post("/auth/login", { email, password });
-      const userData = response.data.data;
+      // Accept either response.data.data or response.data.user
+      const userData = response.data.data || response.data.user || null;
 
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
 
       return { success: true };
+      if (!userData) {
+        return { success: false, message: "Invalid login response." };
+      }
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
       return {
