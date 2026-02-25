@@ -11,15 +11,7 @@ const generateToken = (id) => {
 };
 
 // Helper function to set authentication cookie
-const setAuthCookie = (res, token) => {
-  res.cookie("authToken", token, {
-    httpOnly: true, // Prevents JavaScript from accessing the token
-    secure: true, // Always true for mobile/cross-origin compatibility
-    sameSite: "None", // Capital N for consistency with spec
-    maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
-    path: "/",
-  });
-};
+// Removed cookie logic. Backend will not set cookies.
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -56,12 +48,10 @@ export const register = async (req, res) => {
 
     // Generate token
     const token = generateToken(user._id);
-
-    // Set authentication cookie (httpOnly for security)
-    setAuthCookie(res, token);
-
+    // Cookie logic removed. Token will be returned in response in next step.
     res.status(201).json({
       success: true,
+      token,
       data: {
         _id: user._id,
         name: user.name,
@@ -123,12 +113,10 @@ export const login = async (req, res) => {
 
     // Generate token
     const token = generateToken(user._id);
-
-    // Set authentication cookie (httpOnly for security)
-    setAuthCookie(res, token);
-
+    // Cookie logic removed. Token will be returned in response in next step.
     res.status(200).json({
       success: true,
+      token,
       data: {
         _id: user._id,
         name: user.name,
@@ -234,14 +222,7 @@ export const deleteUser = async (req, res) => {
 // @access  Private
 export const logout = async (req, res) => {
   try {
-    // Clear the httpOnly cookie (match login cookie settings for reliability)
-    res.clearCookie("authToken", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      path: "/",
-    });
-
+    // Cookie clearing removed. Logout is now stateless.
     res.status(200).json({
       success: true,
       message: "Logged out successfully",

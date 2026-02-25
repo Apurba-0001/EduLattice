@@ -16,32 +16,18 @@ const generateToken = (userId) => {
 };
 
 // Helper to set auth cookie
-const setAuthCookie = (res, token) => {
-  res.cookie("authToken", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 60 * 60 * 1000, // 1 hour
-    path: "/",
-  });
-};
+// Removed cookie logic. Middleware will only use Authorization header.
 
 export const protect = async (req, res, next) => {
   try {
     let token;
-
-    // Priority 1: Check httpOnly cookie (safer method)
-    if (req.cookies && req.cookies.authToken) {
-      token = req.cookies.authToken;
-    }
-    // Priority 2: Check Authorization header (for backward compatibility)
-    else if (
+    // Only check Authorization header
+    if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
     }
-
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -60,12 +46,6 @@ export const protect = async (req, res, next) => {
 
         // If inactive for more than 20 minutes, logout user
         if (inactivityDuration > SESSION_TIMEOUT) {
-          res.clearCookie("authToken", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            path: "/",
-          });
           return res.status(401).json({
             success: false,
             message: "Session expired due to inactivity. Please login again.",
@@ -81,11 +61,6 @@ export const protect = async (req, res, next) => {
           message: "User not found",
         });
       }
-
-      // Generate and set new token with updated lastActivity
-      // This resets the inactivity timer on every request
-      const newToken = generateToken(req.user._id);
-      setAuthCookie(res, newToken);
 
       // Update last activity in database (non-blocking)
       req.user.lastActivity = new Date();
