@@ -1,3 +1,38 @@
 mobile view resource table needs fix
 also admin panel table 
 security scans 
+
+
+1. Use a Proper Maskable Icon
+Make sure your icon files (especially those with "purpose": "maskable") are true PNGs with a transparent background and no black border or shadow.
+Use maskable.app to generate a maskable icon that fills the safe area and looks good on all devices.
+How to update:
+
+Replace /icon-192x192.png and /icon-512x512.png with new maskable PNGs.
+Ensure the icon fills the canvas and has no extra transparent padding.
+2. Remove Black Border from Icon
+Open your icon in an image editor (Figma, Photoshop, GIMP, etc.).
+Remove any black outline or shadow.
+Export as PNG with a transparent or white background.
+3. Double-Check Manifest Icon Paths
+Make sure the icons referenced in your manifest actually match the updated, borderless, maskable icons.
+Clear your browser cache or uninstall/reinstall the PWA to see changes.
+4. Provide Custom Splash Screens (Advanced)
+For full control, you can provide platform-specific splash images using the pwa-asset-generator:
+
+Run the tool to generate splash screens for all devices and add them to your manifest.
+This ensures your splash looks exactly as you want on every device.
+5. Test on Multiple Devices/Browsers
+Sometimes, old icons are cached. Try on a different device or clear the app data/cache.
+Uninstall and reinstall the PWA from your home screen.
+6. Fallback: Use a Centered Splash Div (Web Only)
+If you want a custom splash while the app loads (not the OS splash), use a splash div as described earlier, then hide it after your app loads.
+
+Summary Table
+Solution	What to Do
+Maskable Icon	Use maskable.app, update manifest with new icons
+Remove Black Border	Edit icon PNG, remove border/shadow, export as transparent PNG
+Check Manifest Paths	Ensure manifest points to correct, updated icons
+Custom Splash Screens	Use pwa-asset-generator for device-specific splash images
+Clear Cache/Reinstall	Uninstall/reinstall PWA, clear browser cache
+Custom Splash Div (Web only)	Use a loading div with your icon and white backgroun
