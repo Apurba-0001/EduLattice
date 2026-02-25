@@ -14,8 +14,8 @@ const generateToken = (id) => {
 const setAuthCookie = (res, token) => {
   res.cookie("authToken", token, {
     httpOnly: true, // Prevents JavaScript from accessing the token
-    secure: true,
-    sameSite: "none",
+    secure: true, // Always true for mobile/cross-origin compatibility
+    sameSite: "None", // Capital N for consistency with spec
     maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
     path: "/",
   });
@@ -234,11 +234,11 @@ export const deleteUser = async (req, res) => {
 // @access  Private
 export const logout = async (req, res) => {
   try {
-    // Clear the httpOnly cookie
+    // Clear the httpOnly cookie (match login cookie settings for reliability)
     res.clearCookie("authToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "None",
       path: "/",
     });
 
