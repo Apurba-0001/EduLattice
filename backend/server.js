@@ -90,7 +90,7 @@ app.use(
 app.use(cookieParser());
 
 // 5. Request size limits
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json());
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // 6. Compression middleware for faster downloads
