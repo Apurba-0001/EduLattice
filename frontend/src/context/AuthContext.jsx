@@ -53,12 +53,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post("/auth/login", { email, password });
       const userData = response.data.data || response.data.user || null;
+      const token = response.data.token;
 
-      if (!userData) {
+      if (!userData || !token) {
         return { success: false, message: "Invalid login response." };
       }
 
       localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("token", token);
       setUser(userData);
 
       return { success: true };
@@ -81,8 +83,14 @@ export const AuthProvider = ({ children }) => {
         role,
       });
       const userData = response.data.data;
+      const token = response.data.token;
+
+      if (!userData || !token) {
+        return { success: false, message: "Invalid registration response." };
+      }
 
       localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("token", token);
       setUser(userData);
 
       return { success: true };
@@ -95,16 +103,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      // Call logout endpoint to clear httpOnly cookie on server
-      await api.post("/auth/logout");
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      // Clear user data from localStorage
-      localStorage.removeItem("user");
-      setUser(null);
-    }
+    // No server-side cookie to clear, just remove local data
+    // Remove token and user from localStorage
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+    window.location.href = "/login";
   };
 
   const value = {
