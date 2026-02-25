@@ -14,8 +14,8 @@ const generateToken = (id) => {
 const setAuthCookie = (res, token) => {
   res.cookie("authToken", token, {
     httpOnly: true, // Prevents JavaScript from accessing the token
-    secure: process.env.NODE_ENV === "production", // Only send over HTTPS in production
-    sameSite: "strict", // CSRF protection
+    secure: true,
+    sameSite: "none",
     maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
     path: "/",
   });

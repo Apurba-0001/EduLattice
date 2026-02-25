@@ -51,17 +51,22 @@ app.use(
 );
 
 // 2. CORS configuration
+const allowedOrigins =
+  process.env.NODE_ENV === "production"
+    ? process.env.FRONTEND_URL
+    : process.env.DEV_ORIGINS
+      ? process.env.DEV_ORIGINS.split(",")
+      : [
+          "http://localhost:5173",
+          "http://localhost:5174",
+          "http://127.0.0.1:5173",
+          "http://127.0.0.1:5174",
+          "http://192.168.0.156:5173",
+        ];
+
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL
-        : [
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:5174",
-          ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
