@@ -31,9 +31,21 @@ import resourceRoutes from "./routes/resourceRoutes.js";
 
 // Initialize Express app
 const app = express();
+// Root route for status and info
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    service: "EduLattice Backend",
+    environment: process.env.NODE_ENV || "development",
+    mode: process.env.NODE_ENV === "production" ? "production" : "development",
+  });
+});
 
 // Connect to MongoDB
+
 connectDB();
+
+// Lightweight ping route for uptime monitoring
 
 // ========== SECURITY MIDDLEWARE ==========
 
