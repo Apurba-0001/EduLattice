@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// Session timeout: 20 minutes of inactivity (in milliseconds)
-const SESSION_TIMEOUT = 20 * 60 * 1000;
+// Session timeout configurable via SESSION_TIMEOUT_MINUTES env var (default: 20 min)
+const SESSION_TIMEOUT_MINUTES = parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) || 20;
+const SESSION_TIMEOUT = SESSION_TIMEOUT_MINUTES * 60 * 1000;
 
 // Helper to generate token with current activity timestamp
 const generateToken = (userId) => {

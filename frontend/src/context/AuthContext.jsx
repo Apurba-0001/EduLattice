@@ -1,5 +1,15 @@
-import { createContext, useState, useContext, useEffect } from "react";
+import {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
 import api from "../utils/api";
+import useInactivityTimeout from "../hooks/useInactivityTimeout";
+
+// Fallback: 15 minutes (matches backend default)
+const DEFAULT_SESSION_TIMEOUT_MS = 15 * 60 * 1000;
 
 const AuthContext = createContext();
 
@@ -14,6 +24,9 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionTimeoutMs, setSessionTimeoutMs] = useState(
+    DEFAULT_SESSION_TIMEOUT_MS,
+  );
 
   // Initialize on mount
   useEffect(() => {
@@ -27,6 +40,20 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
+  }, []);
+
+  // Fetch session timeout from backend config
+  useEffect(() => {
+    api
+      .get("/config")
+      .then((res) => {
+        if (res.data?.data?.sessionTimeoutMs) {
+          setSessionTimeoutMs(res.data.data.sessionTimeoutMs);
+        }
+      })
+      .catch(() => {
+        // Fallback to default if config endpoint unavailable
+      });
   }, []);
 
   // Logout when browser closes
@@ -110,6 +137,16 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     window.location.href = "/login";
   };
+
+  // Auto-logout on inactivity
+  const handleInactivityTimeout = useCallback(() => {
+    if (user) {
+      alert("You have been logged out due to inactivity.");
+      logout();
+    }
+  }, [user]);
+
+  useInactivityTimeout(handleInactivityTimeout, sessionTimeoutMs, !!user);
 
   const value = {
     user,

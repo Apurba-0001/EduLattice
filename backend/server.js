@@ -130,6 +130,18 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/resources", resourceRoutes);
 
+// Public config endpoint - exposes non-sensitive settings to frontend
+app.get("/api/config", (req, res) => {
+  const sessionTimeoutMinutes =
+    parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) || 20;
+  res.json({
+    success: true,
+    data: {
+      sessionTimeoutMs: sessionTimeoutMinutes * 60 * 1000,
+    },
+  });
+});
+
 // Health check route
 app.get("/api/health", (req, res) => {
   res.status(200).json({

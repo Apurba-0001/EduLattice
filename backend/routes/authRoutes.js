@@ -13,13 +13,18 @@ import { protect, adminOnly } from "../middleware/auth.js";
 const router = express.Router();
 
 // Rate limiting for auth endpoints - prevent brute force attacks
+// Configurable via RATE_LIMIT_MAX_ATTEMPTS and RATE_LIMIT_WINDOW_MS env vars
+const rateLimitWindowMs =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000;
+const rateLimitMax = parseInt(process.env.RATE_LIMIT_MAX_ATTEMPTS, 10) || 10;
+const windowMinutes = Math.round(rateLimitWindowMs / 60000);
+
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === "production" ? 10 : 100, // Relaxed in dev
+  windowMs: rateLimitWindowMs,
+  max: process.env.NODE_ENV === "production" ? rateLimitMax : 100, // Relaxed in dev
   message: {
     success: false,
-    message:
-      "Too many authentication attempts. Please try again after 15 minutes.",
+    message: `Too many authentication attempts. Please try again after ${windowMinutes} minutes.`,
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
