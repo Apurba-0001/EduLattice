@@ -193,6 +193,20 @@ export const uploadResource = async (req, res) => {
       });
     }
 
+    // SECURITY: Ensure all text inputs are strings (blocks NoSQL operator injection)
+    if (
+      typeof title !== "string" ||
+      typeof description !== "string" ||
+      typeof subject !== "string" ||
+      typeof semester !== "string" ||
+      typeof resourceType !== "string"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input types",
+      });
+    }
+
     if (!files || files.length === 0) {
       return res.status(400).json({
         success: false,
@@ -207,9 +221,11 @@ export const uploadResource = async (req, res) => {
         file.originalname,
       );
       if (dangerReason) {
-        console.log(
-          `🚨 SECURITY ALERT: Blocked dangerous file upload - "${file.originalname}" (${dangerReason})`,
-        );
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            `🚨 SECURITY: Blocked dangerous file upload (${dangerReason})`,
+          );
+        }
         return res.status(400).json({
           success: false,
           message: `Security alert: File "${file.originalname}" is blocked. Reason: ${dangerReason}. Please upload a safe file instead.`,
@@ -353,7 +369,6 @@ export const uploadResource = async (req, res) => {
         fileType,
         fileUrl: uploadResult.fileUrl,
         cloudinaryPublicId: uploadResult.publicId,
-        driveFileId: null,
         fileName: displayFileName,
         storageFileName: storageFileName,
         fileSize: file.size,
@@ -378,11 +393,11 @@ export const uploadResource = async (req, res) => {
     });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.error("Upload error:", error);
+      console.error("Upload error:", error.message);
     }
     res.status(500).json({
       success: false,
-      message: error.message || "Server error during file upload",
+      message: "Server error during file upload",
     });
   }
 };
@@ -440,7 +455,7 @@ export const getResources = async (req, res) => {
     }
 
     if (resourceType) {
-      query.resourceType = resourceType;
+      query.resourceType = String(resourceType);
     }
 
     if (keyword) {
@@ -483,7 +498,7 @@ export const getResources = async (req, res) => {
     });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.error("Get resources error:", error);
+      console.error("Get resources error:", error.message);
     }
     res.status(500).json({
       success: false,
@@ -576,7 +591,9 @@ export const updateResource = async (req, res) => {
 
     // SECURITY: Explicit authorization check (defense in depth)
     if (!isAdmin && userId !== uploadedBy) {
-      console.log(`❌ Unauthorized update attempt by user ${userId}`);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`❌ Unauthorized update attempt`);
+      }
       return res.status(403).json({
         success: false,
         message: "You are not authorized to update this resource.",
@@ -595,7 +612,8 @@ export const updateResource = async (req, res) => {
 
     for (const field of allowedUpdates) {
       if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
+        // SECURITY: Coerce to string to block NoSQL operator injection
+        updates[field] = String(req.body[field]);
       }
     }
 
@@ -613,10 +631,11 @@ export const updateResource = async (req, res) => {
       { new: true, runValidators: true },
     ).populate("uploadedBy", "name email");
 
-    console.log(`✅ Resource updated by ${isAdmin && userId !== uploadedBy ? "Admin" : "Owner"}:
-      User: ${userId}
-      Resource: ${resource.fileId}
-      Fields: ${Object.keys(updates).join(", ")}`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `✅ Resource updated by ${isAdmin && userId !== uploadedBy ? "Admin" : "Owner"}: Fields=${Object.keys(updates).join(", ")}`,
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -624,11 +643,11 @@ export const updateResource = async (req, res) => {
     });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.error("Update error:", error);
+      console.error("Update error:", error.message);
     }
     res.status(500).json({
       success: false,
-      message: error.message || "Server error during update",
+      message: "Server error during update",
     });
   }
 };
@@ -655,18 +674,18 @@ export const deleteResource = async (req, res) => {
       : resource.uploadedBy.toString();
     const isAdmin = req.user.isAdmin === true;
 
-    // Log deletion attempt
-    console.log(`Delete attempt:
-      User ID: ${userId}
-      Uploaded By: ${uploadedBy}
-      Is Admin: ${isAdmin}
-      File: ${resource.fileName}
-      FileId: ${resource.fileId}
-      ImageGroupId: ${resource.imageGroupId || "none"}`);
+    // Log deletion attempt (dev only)
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `Delete attempt: IsAdmin=${isAdmin} File=${resource.fileName}`,
+      );
+    }
 
     // SECURITY: Explicit authorization check (defense in depth)
     if (!isAdmin && userId !== uploadedBy) {
-      console.log(`❌ Unauthorized deletion attempt by user ${userId}`);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`❌ Unauthorized deletion attempt`);
+      }
       return res.status(403).json({
         success: false,
         message:
@@ -678,14 +697,16 @@ export const deleteResource = async (req, res) => {
     let resourcesToDelete = [resource];
 
     if (resource.imageGroupId) {
-      console.log(
-        `📸 Found grouped images with imageGroupId: ${resource.imageGroupId}`,
-      );
+      if (process.env.NODE_ENV === "development") {
+        console.log(`📸 Found grouped images to delete`);
+      }
       const groupedResources = await Resource.find({
         imageGroupId: resource.imageGroupId,
       });
       resourcesToDelete = groupedResources;
-      console.log(`📸 Deleting ${resourcesToDelete.length} grouped images`);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`📸 Deleting ${resourcesToDelete.length} grouped images`);
+      }
     }
 
     // Delete all resources from Cloudinary and database
@@ -711,51 +732,61 @@ export const deleteResource = async (req, res) => {
               publicId = `edulattice/${fileName}`;
             }
           } catch (e) {
-            console.log(`Failed to parse URL: ${e.message}`);
+            if (process.env.NODE_ENV === "development") {
+              console.log(`Failed to parse URL: ${e.message}`);
+            }
           }
         }
 
-        console.log(`Attempting to delete from Cloudinary: ${publicId}`);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Attempting to delete from Cloudinary");
+        }
 
         if (publicId) {
           try {
             await cloudinaryService.deleteImage(publicId);
-            console.log(`✅ Deleted file from Cloudinary: ${publicId}`);
+            if (process.env.NODE_ENV === "development") {
+              console.log("✅ Deleted file from Cloudinary");
+            }
           } catch (cloudError) {
-            console.log(
-              `⚠️ Cloudinary deletion failed for ${publicId}: ${cloudError.message}`,
-            );
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                `⚠️ Cloudinary deletion failed: ${cloudError.message}`,
+              );
+            }
             failedDeletions.push({
               fileId: res.fileId,
               fileName: res.fileName,
-              reason: cloudError.message,
+              reason: "Storage deletion failed",
             });
           }
-        } else if (res.driveFileId) {
-          console.log(
-            `⚠️ Resource was stored on Google Drive (ID: ${res.driveFileId}), which is no longer supported. Removing database record only.`,
-          );
         }
 
         // Delete from database
         await Resource.findByIdAndDelete(res._id);
-        console.log(`✅ Deleted resource from database: ${res.fileId}`);
+        if (process.env.NODE_ENV === "development") {
+          console.log("✅ Deleted resource from database");
+        }
         deletedFileIds.push(res.fileId);
       } catch (err) {
-        console.error(`❌ Error deleting resource ${res.fileId}:`, err);
+        if (process.env.NODE_ENV === "development") {
+          console.error("❌ Error deleting resource:", err.message);
+        }
         failedDeletions.push({
           fileId: res.fileId,
           fileName: res.fileName,
-          reason: err.message,
+          reason: "Deletion failed",
         });
       }
     }
 
-    // Log who deleted it
+    // Log summary
     const deletedBy = isAdmin && userId !== uploadedBy ? "Admin" : "Owner";
-    console.log(
-      `✅ ${resourcesToDelete.length} resource(s) deleted successfully by ${deletedBy}`,
-    );
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `✅ ${resourcesToDelete.length} resource(s) deleted by ${deletedBy}`,
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -775,11 +806,11 @@ export const deleteResource = async (req, res) => {
     });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.error("❌ Delete error:", error);
+      console.error("❌ Delete error:", error.message);
     }
     res.status(500).json({
       success: false,
-      message: error.message || "Server error while deleting resource",
+      message: "Server error while deleting resource",
     });
   }
 };
@@ -866,7 +897,7 @@ export const trackView = async (req, res) => {
     });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.error("Track view error:", error);
+      console.error("Track view error:", error.message);
     }
     res.status(500).json({
       success: false,
@@ -958,9 +989,9 @@ export const downloadResource = async (req, res) => {
         // Check for successful response
         if (cloudRes.statusCode !== 200) {
           if (!res.headersSent) {
-            res.status(cloudRes.statusCode).json({
+            res.status(502).json({
               success: false,
-              message: `Cloudinary returned status ${cloudRes.statusCode}`,
+              message: "Error downloading file from storage",
             });
           }
           return;
@@ -976,7 +1007,9 @@ export const downloadResource = async (req, res) => {
       });
 
       request.on("error", (err) => {
-        console.error("Cloudinary request error:", err.message);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Storage request error:", err.message);
+        }
         if (!res.headersSent) {
           res.status(500).json({
             success: false,
@@ -988,7 +1021,9 @@ export const downloadResource = async (req, res) => {
       });
 
       request.on("timeout", () => {
-        console.error("Cloudinary request timeout");
+        if (process.env.NODE_ENV === "development") {
+          console.error("Storage request timeout");
+        }
         request.destroy();
         if (!res.headersSent) {
           res.status(504).json({
@@ -1012,7 +1047,7 @@ export const downloadResource = async (req, res) => {
     }
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.error("Download error:", error);
+      console.error("Download error:", error.message);
     }
     if (!res.headersSent) {
       res.status(500).json({
@@ -1062,9 +1097,7 @@ export const downloadGroupedResources = async (req, res) => {
     }
 
     if (process.env.NODE_ENV === "development") {
-      console.log(
-        `📦 Downloading group of ${groupedResources.length} images with groupId: ${resource.imageGroupId}`,
-      );
+      console.log(`📦 Downloading group of ${groupedResources.length} images`);
     }
 
     // Increment download count for all images in the group
@@ -1092,7 +1125,9 @@ export const downloadGroupedResources = async (req, res) => {
 
     // Handle archive errors
     archive.on("error", (err) => {
-      console.error("Archive error:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Archive error:", err.message);
+      }
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
@@ -1106,7 +1141,9 @@ export const downloadGroupedResources = async (req, res) => {
     // Pipe archive to response with error handling
     archive.pipe(res);
     res.on("error", (err) => {
-      console.error("Response stream error:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Response stream error:", err.message);
+      }
       archive.destroy();
     });
 
@@ -1144,9 +1181,11 @@ export const downloadGroupedResources = async (req, res) => {
       try {
         const fileUrl = groupResource.fileUrl;
         if (!fileUrl) {
-          console.warn(
-            `⚠️ File URL not available for: ${groupResource.fileName}`,
-          );
+          if (process.env.NODE_ENV === "development") {
+            console.warn(
+              `⚠️ File URL not available for: ${groupResource.fileName}`,
+            );
+          }
           activeCount--;
           processNext();
           return;
@@ -1175,7 +1214,9 @@ export const downloadGroupedResources = async (req, res) => {
           });
         });
       } catch (err) {
-        console.warn(`⚠️ Failed to add file to archive: ${err.message}`);
+        if (process.env.NODE_ENV === "development") {
+          console.warn(`⚠️ Failed to add file to archive: ${err.message}`);
+        }
         // Continue with other files
       } finally {
         activeCount--;
@@ -1187,7 +1228,7 @@ export const downloadGroupedResources = async (req, res) => {
     processNext();
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      console.error("Group download error:", error);
+      console.error("Group download error:", error.message);
     }
     if (!res.headersSent) {
       res.status(500).json({

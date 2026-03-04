@@ -35,10 +35,12 @@ class CloudinaryService {
         console.log("[CLOUDINARY] Initialized successfully");
       }
     } catch (error) {
-      console.error(
-        "[CLOUDINARY] Initialization error:",
-        error.code || error.message,
-      );
+      if (process.env.NODE_ENV === "development") {
+        console.error(
+          "[CLOUDINARY] Initialization error:",
+          error.code || error.message,
+        );
+      }
     }
   }
 
@@ -74,8 +76,10 @@ class CloudinaryService {
         );
 
         uploadStream.on("error", (error) => {
-          console.error("Upload stream error:", error);
-          reject(new Error(`Upload stream failed: ${error.message}`));
+          if (process.env.NODE_ENV === "development") {
+            console.error("Upload stream error:", error.message);
+          }
+          reject(new Error("File upload failed. Please try again."));
         });
 
         uploadStream.end(fileBuffer);
@@ -106,9 +110,12 @@ class CloudinaryService {
           (error, result) => {
             if (error) {
               if (process.env.NODE_ENV === "development") {
-                console.error("Cloudinary document upload error:", error);
+                console.error(
+                  "Cloudinary document upload error:",
+                  error.message,
+                );
               }
-              reject(new Error(`Cloudinary upload failed: ${error.message}`));
+              reject(new Error("Document upload failed. Please try again."));
             } else {
               resolve({
                 publicId: result.public_id,
@@ -121,9 +128,9 @@ class CloudinaryService {
 
         uploadStream.on("error", (error) => {
           if (process.env.NODE_ENV === "development") {
-            console.error("Upload stream error:", error);
+            console.error("Upload stream error:", error.message);
           }
-          reject(new Error(`Upload stream failed: ${error.message}`));
+          reject(new Error("Document upload failed. Please try again."));
         });
 
         uploadStream.end(fileBuffer);
@@ -132,7 +139,7 @@ class CloudinaryService {
       if (process.env.NODE_ENV === "development") {
         console.error("Error uploading document to Cloudinary:", error.message);
       }
-      throw new Error(`Cloudinary document upload failed: ${error.message}`);
+      throw new Error("Document upload failed. Please try again.");
     }
   }
 
@@ -142,7 +149,7 @@ class CloudinaryService {
       this.ensureInitialized();
 
       if (process.env.NODE_ENV === "development") {
-        console.log(`Cloudinary delete attempt - publicId: ${publicId}`);
+        console.log("Cloudinary delete attempt");
       }
 
       // Try deleting as image first
@@ -151,7 +158,7 @@ class CloudinaryService {
         invalidate: true,
       });
       if (process.env.NODE_ENV === "development") {
-        console.log(`Image delete result: ${JSON.stringify(result)}`);
+        console.log(`Image delete result: ${result.result}`);
       }
 
       // If image deletion didn't work (not found), try as raw (document)
@@ -164,7 +171,7 @@ class CloudinaryService {
           invalidate: true,
         });
         if (process.env.NODE_ENV === "development") {
-          console.log(`Raw delete result: ${JSON.stringify(result)}`);
+          console.log(`Raw delete result: ${result.result}`);
         }
       }
 
@@ -172,13 +179,13 @@ class CloudinaryService {
       if (result.result === "ok" || result.result === "not found") {
         return { success: true, message: "File deleted from Cloudinary" };
       } else {
-        throw new Error(`Unexpected result: ${result.result}`);
+        throw new Error("File deletion failed. Please try again.");
       }
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("Error deleting from Cloudinary:", error.message);
       }
-      throw new Error(`Cloudinary deletion failed: ${error.message}`);
+      throw new Error("File deletion failed. Please try again.");
     }
   }
 }

@@ -31,14 +31,23 @@ export const AuthProvider = ({ children }) => {
   // Initialize on mount
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
+    const isPageRefresh = sessionStorage.getItem("auth_session_active");
 
-    if (savedUser) {
+    // If sessionStorage missing, the tab was actually closed (clear localStorage)
+    // If sessionStorage exists, it's a page refresh (restore from localStorage)
+    if (!isPageRefresh && savedUser) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    } else if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
         localStorage.removeItem("user");
       }
     }
+
+    // Mark this session as active (persists on refresh, cleared on tab close)
+    sessionStorage.setItem("auth_session_active", "true");
     setLoading(false);
   }, []);
 
@@ -56,33 +65,23 @@ export const AuthProvider = ({ children }) => {
       });
   }, []);
 
-  // Logout when browser closes
+  // Cleanup on window/tab close (don't interfere with page refresh)
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      // Clear auth data when user closes the browser
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-
-      // Try to notify backend (may not complete if browser closes)
+    const handleBeforeUnload = () => {
+      // Only notify backend on actual close (best effort)
+      // Don't clear localStorage here - let sessionStorage handle it
       try {
         navigator.sendBeacon("/api/auth/logout");
-      } catch (error) {
-        console.error("Logout beacon error:", error);
+      } catch {
+        // Beacon may fail on page close — safe to ignore
       }
-
-      // Return undefined (modern browsers don't show custom messages)
-      return undefined;
     };
 
-    // Listen to beforeunload (tab/window close)
+    // beforeunload fires on close AND refresh, but sessionStorage protects refresh
     window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Also listen to pagehide for better mobile support
-    window.addEventListener("pagehide", handleBeforeUnload);
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("pagehide", handleBeforeUnload);
     };
   }, []);
 
@@ -102,7 +101,6 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
       return {
         success: false,
         message:
@@ -111,13 +109,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, role = "student") => {
+  const register = async (name, email, password) => {
     try {
       const response = await api.post("/auth/register", {
         name,
         email,
         password,
-        role,
       });
       const userData = response.data.data;
       const token = response.data.token;
@@ -140,8 +137,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // No server-side cookie to clear, just remove local data
-    // Remove token and user from localStorage
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);

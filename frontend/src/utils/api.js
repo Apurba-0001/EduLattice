@@ -28,8 +28,9 @@ api.interceptors.response.use(
       error.config?.url?.includes("/auth/login") ||
       error.config?.url?.includes("/auth/register");
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      // Clear user data on unauthorized access (only for protected routes)
+      // SECURITY: Clear both token and user data on unauthorized access
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
       // Redirect to login
       window.location.href = "/login";
     }

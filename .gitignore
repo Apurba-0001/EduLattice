@@ -13,7 +13,7 @@ yarn.lock
 .env.test   
 .env.*.local
 .env.test.local
-.env.example
+# .env.example — keep tracked for developer onboarding
 
 # Logs
 logs

@@ -8,7 +8,6 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "student",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,7 +45,6 @@ const Register = () => {
       formData.name,
       formData.email,
       formData.password,
-      formData.role,
     );
 
     if (result.success) {

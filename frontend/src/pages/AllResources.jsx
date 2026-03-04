@@ -56,7 +56,6 @@ const AllResources = () => {
       setResources(response.data.data || []);
       setError("");
     } catch (err) {
-      console.error("Error fetching resources:", err);
       setError(
         err.response?.data?.message ||
           err.message ||
@@ -159,7 +158,6 @@ const AllResources = () => {
           setError("");
         })
         .catch((err) => {
-          console.error("Error fetching resources:", err);
           setError(
             err.response?.data?.message ||
               err.message ||

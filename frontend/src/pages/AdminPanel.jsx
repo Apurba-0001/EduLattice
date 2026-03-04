@@ -40,7 +40,6 @@ const AdminPanel = () => {
       setError("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch data");
-      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }

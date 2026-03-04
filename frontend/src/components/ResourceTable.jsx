@@ -17,7 +17,6 @@ const ResourceTable = ({
       // Track view count
       await api.post(`/resources/${resource._id}/view`);
     } catch (error) {
-      console.error("Failed to track view:", error);
       // Don't block viewing if tracking fails
     }
     setSelectedResource(resource);
@@ -34,9 +33,7 @@ const ResourceTable = ({
 
       // Check if this is a grouped image - if so, download the entire group as zip
       if (resource.imageGroupId) {
-        console.log(
-          `📦 Downloading grouped images with groupId: ${resource.imageGroupId}`,
-        );
+        // Grouped image download
         const response = await api.get(
           `/resources/${resource._id}/download-group`,
           {
@@ -70,7 +67,6 @@ const ResourceTable = ({
         window.URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error("Download error:", error);
       alert("Failed to download file. Please try again.");
     }
   };

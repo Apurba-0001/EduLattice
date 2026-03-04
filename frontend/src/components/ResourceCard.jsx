@@ -35,7 +35,6 @@ const ResourceCard = ({ resource, onDelete, showActions = true }) => {
       // Use window.open with correct approach for forcing downloads
       window.open(downloadUrl, "_blank", "noopener=yes");
     } catch (error) {
-      console.error("Download error:", error);
       alert("Failed to download file");
     }
   };

@@ -2,22 +2,9 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 // Session timeout configurable via SESSION_TIMEOUT_MINUTES env var (default: 20 min)
-const SESSION_TIMEOUT_MINUTES = parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) || 20;
+const SESSION_TIMEOUT_MINUTES =
+  parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) || 20;
 const SESSION_TIMEOUT = SESSION_TIMEOUT_MINUTES * 60 * 1000;
-
-// Helper to generate token with current activity timestamp
-const generateToken = (userId) => {
-  return jwt.sign(
-    { id: userId, lastActivity: Date.now() },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "1h",
-    },
-  );
-};
-
-// Helper to set auth cookie
-// Removed cookie logic. Middleware will only use Authorization header.
 
 export const protect = async (req, res, next) => {
   try {
@@ -66,7 +53,9 @@ export const protect = async (req, res, next) => {
       // Update last activity in database (non-blocking)
       req.user.lastActivity = new Date();
       req.user.save().catch((err) => {
-        console.error("Error updating lastActivity:", err);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Error updating lastActivity:", err.message);
+        }
       });
 
       next();
@@ -127,21 +116,17 @@ export const authorizeResourceAccess = async (req, res, next) => {
 
     // Allow if user is admin or the uploader
     if (isAdmin || uploadedById === userId) {
-      console.log(`✅ Authorization granted:
-        User: ${userId}
-        Uploader: ${uploadedById}
-        Is Admin: ${isAdmin}
-        Resource: ${resource.fileId}
-        Action: ${req.method}`);
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `✅ Authorization granted: IsAdmin=${isAdmin} Action=${req.method}`,
+        );
+      }
       req.resource = resource;
       next();
     } else {
-      console.log(`❌ Authorization denied:
-        User: ${userId}
-        Uploader: ${uploadedById}
-        Is Admin: ${isAdmin}
-        Resource: ${resource.fileId}
-        Action: ${req.method}`);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`❌ Authorization denied: Action=${req.method}`);
+      }
       return res.status(403).json({
         success: false,
         message:
@@ -149,7 +134,9 @@ export const authorizeResourceAccess = async (req, res, next) => {
       });
     }
   } catch (error) {
-    console.error("Authorization error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Authorization error:", error.message);
+    }
     res.status(500).json({
       success: false,
       message: "Server error during authorization check",

@@ -10,14 +10,15 @@ const makeAdmin = async () => {
     console.log("Connected to MongoDB");
 
     // Find user by email and make them admin
+    // Uses native MongoDB driver to bypass Mongoose immutable guard on isAdmin
     const email = process.argv[2] || "apurba@email.com";
-    const user = await User.findOneAndUpdate(
+    const result = await User.collection.updateOne(
       { email },
-      { isAdmin: true },
-      { new: true },
+      { $set: { isAdmin: true } },
     );
 
-    if (user) {
+    if (result.matchedCount > 0) {
+      const user = await User.findOne({ email });
       console.log(`✅ User ${email} is now an admin!`);
       console.log("User details:", {
         name: user.name,

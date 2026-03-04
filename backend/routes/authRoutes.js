@@ -9,6 +9,7 @@ import {
   deleteUser,
 } from "../controllers/authController.js";
 import { protect, adminOnly } from "../middleware/auth.js";
+import validateObjectId from "../middleware/validateId.js";
 
 const router = express.Router();
 
@@ -35,6 +36,6 @@ router.post("/login", authLimiter, login);
 router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
 router.get("/users", protect, adminOnly, getAllUsers);
-router.delete("/users/:id", protect, adminOnly, deleteUser);
+router.delete("/users/:id", protect, adminOnly, validateObjectId, deleteUser);
 
 export default router;

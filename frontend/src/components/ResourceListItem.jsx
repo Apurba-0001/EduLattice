@@ -12,10 +12,13 @@ const ResourceListItem = ({ resource, onDelete, showActions = true }) => {
 
       // Check if this is a grouped image - if so, download the entire group as zip
       if (resource.imageGroupId) {
-        console.log(`📦 Downloading grouped images with groupId: ${resource.imageGroupId}`);
-        const response = await api.get(`/resources/${resource._id}/download-group`, {
-          responseType: "blob",
-        });
+        // Grouped image download
+        const response = await api.get(
+          `/resources/${resource._id}/download-group`,
+          {
+            responseType: "blob",
+          },
+        );
 
         // Create blob URL and download zip
         const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -43,7 +46,6 @@ const ResourceListItem = ({ resource, onDelete, showActions = true }) => {
         window.URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error("Download error:", error);
       alert("Failed to download file. Please try again.");
     }
   };

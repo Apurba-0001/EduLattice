@@ -37,6 +37,7 @@ const userSchema = new mongoose.Schema(
     isAdmin: {
       type: Boolean,
       default: false,
+      immutable: true, // Can only be changed directly in the database (e.g. makeAdmin.js or MongoDB shell)
     },
     lastActivity: {
       type: Date,

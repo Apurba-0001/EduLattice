@@ -18,11 +18,15 @@ const connectDB = async () => {
         ...mongoOptions,
         family: 4,
       });
-      console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+      console.log("✅ MongoDB Connected");
     } catch (srvError) {
       // If SRV fails, try converting to standard format (bypass DNS issues)
       if (mongoUri.includes("+srv")) {
-        console.log("⚠️  SRV connection failed, trying standard connection...");
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "⚠️  SRV connection failed, trying standard connection...",
+          );
+        }
 
         // Remove +srv and add default ports
         const standardUri = mongoUri
@@ -35,14 +39,18 @@ const connectDB = async () => {
           ssl: true,
           authSource: "admin",
         });
-        console.log(`✅ MongoDB Connected (Standard): ${conn.connection.host}`);
+        console.log("✅ MongoDB Connected (Standard)");
       } else {
         throw srvError;
       }
     }
   } catch (error) {
-    console.error(`❌ MongoDB Error: ${error.message}`);
-    console.error("Please check your MONGODB_URI in .env file");
+    if (process.env.NODE_ENV === "development") {
+      console.error(`❌ MongoDB Error: ${error.message}`);
+      console.error("Please check your MONGODB_URI in .env file");
+    } else {
+      console.error("❌ MongoDB connection failed");
+    }
     process.exit(1);
   }
 };

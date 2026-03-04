@@ -48,7 +48,7 @@ const resourceSchema = new mongoose.Schema(
     fileType: {
       type: String,
       required: true,
-      enum: ["pdf", "ppt", "doc", "image"],
+      enum: ["pdf", "ppt", "doc", "excel", "image"],
     },
     imageGroupId: {
       type: String,
@@ -104,6 +104,14 @@ const resourceSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform: function (_doc, ret) {
+        // Strip internal storage fields from API responses
+        delete ret.cloudinaryPublicId;
+        delete ret.storageFileName;
+        return ret;
+      },
+    },
   },
 );
 

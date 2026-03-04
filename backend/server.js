@@ -31,15 +31,6 @@ import resourceRoutes from "./routes/resourceRoutes.js";
 
 // Initialize Express app
 const app = express();
-// Root route for status and info
-app.get("/", (req, res) => {
-  res.status(200).json({
-    status: "OK",
-    service: "EduLattice Backend",
-    environment: process.env.NODE_ENV || "development",
-    mode: process.env.NODE_ENV === "production" ? "production" : "development",
-  });
-});
 
 // Connect to MongoDB
 
@@ -73,7 +64,6 @@ const allowedOrigins =
           "http://localhost:5174",
           "http://127.0.0.1:5173",
           "http://127.0.0.1:5174",
-          "http://192.168.0.156:5173",
         ];
 
 app.use(
@@ -130,7 +120,9 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/resources", resourceRoutes);
 
-// Public config endpoint - exposes non-sensitive settings to frontend
+// Public config endpoint — intentionally unauthenticated.
+// Only exposes non-sensitive, client-visible settings (e.g. sessionTimeoutMs).
+// Do NOT add any sensitive server config here.
 app.get("/api/config", (req, res) => {
   const sessionTimeoutMinutes =
     parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) || 20;
@@ -154,13 +146,8 @@ app.get("/api/health", (req, res) => {
 // Root route
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to EduLattice API",
-    version: "1.0.0",
-    endpoints: {
-      auth: "/api/auth",
-      resources: "/api/resources",
-      health: "/api/health",
-    },
+    status: "OK",
+    message: "EduLattice API",
   });
 });
 
@@ -187,7 +174,8 @@ app.use((err, req, res, next) => {
   if (err.message && err.message.includes("Invalid file type")) {
     return res.status(400).json({
       success: false,
-      message: err.message,
+      message:
+        "Invalid file type. Only PDF, PPT, DOCX, XLS, JPG, and PNG are allowed.",
     });
   }
 
@@ -199,15 +187,10 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // In production, don't expose error messages
-  const message =
-    process.env.NODE_ENV === "production"
-      ? "An error occurred. Please try again."
-      : err.message || "Internal server error";
-
+  // Never expose internal error messages to clients
   res.status(err.status || 500).json({
     success: false,
-    message: message,
+    message: "An error occurred. Please try again.",
   });
 });
 
