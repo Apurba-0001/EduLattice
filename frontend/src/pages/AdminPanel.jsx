@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import api from "../utils/api";
-import ResourceTable from "../components/ResourceTable";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 const AdminPanel = () => {
@@ -10,11 +9,13 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("stats");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mobileUserActionPopup, setMobileUserActionPopup] = useState(null);
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     resourceId: null,
     resourceName: "",
     isDeleting: false,
+    type: "resource", // "resource" or "user"
   });
 
   useEffect(() => {
@@ -53,6 +54,20 @@ const AdminPanel = () => {
         resourceId: id,
         resourceName: resource.title,
         isDeleting: false,
+        type: "resource",
+      });
+    }
+  };
+
+  const handleDeleteUser = (id) => {
+    const user = users.find((u) => u._id === id);
+    if (user) {
+      setDeleteModal({
+        isOpen: true,
+        resourceId: id,
+        resourceName: user.name,
+        isDeleting: false,
+        type: "user",
       });
     }
   };
@@ -60,16 +75,25 @@ const AdminPanel = () => {
   const handleDeleteConfirm = async () => {
     try {
       setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
-      await api.delete(`/resources/${deleteModal.resourceId}`);
-      setResources(resources.filter((r) => r._id !== deleteModal.resourceId));
+
+      if (deleteModal.type === "resource") {
+        await api.delete(`/resources/${deleteModal.resourceId}`);
+        setResources(resources.filter((r) => r._id !== deleteModal.resourceId));
+      } else if (deleteModal.type === "user") {
+        await api.delete(`/auth/users/${deleteModal.resourceId}`);
+        setUsers(users.filter((u) => u._id !== deleteModal.resourceId));
+      }
+
       setDeleteModal({
         isOpen: false,
         resourceId: null,
         resourceName: "",
         isDeleting: false,
+        type: "resource",
       });
+      setMobileUserActionPopup(null);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete resource");
+      setError(err.response?.data?.message || "Failed to delete item");
       setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -80,7 +104,9 @@ const AdminPanel = () => {
       resourceId: null,
       resourceName: "",
       isDeleting: false,
+      type: "resource",
     });
+    setMobileUserActionPopup(null);
   };
 
   return (
@@ -247,11 +273,94 @@ const AdminPanel = () => {
                     <p className="text-slate-400 text-lg">No resources found</p>
                   </div>
                 ) : (
-                  <ResourceTable
-                    resources={resources}
-                    onDelete={handleDeleteResource}
-                    showActions={true}
-                  />
+                  <>
+                    <div className="overflow-x-auto rounded-xl">
+                      <table className="w-full">
+                        <thead>
+                          <tr
+                            style={{
+                              background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            }}
+                          >
+                            <th className="px-3 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tl-xl">
+                              Title
+                            </th>
+                            <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                              Subject
+                            </th>
+                            <th className="px-3 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                              Type
+                            </th>
+                            <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                              Uploaded
+                            </th>
+                            <th className="px-3 sm:px-6 py-4 text-center text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tr-xl">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {resources.map((resource) => (
+                            <tr
+                              key={resource._id}
+                              className="hover:bg-slate-100 transition-colors duration-150"
+                            >
+                              <td className="px-3 sm:px-6 py-4">
+                                <div className="text-sm font-medium text-slate-700">
+                                  {resource.title}
+                                </div>
+                                <div className="sm:hidden text-xs text-slate-500 mt-0.5 truncate max-w-[160px]">
+                                  {resource.subject}
+                                </div>
+                              </td>
+                              <td className="hidden sm:table-cell px-6 py-4 text-sm text-slate-500">
+                                {resource.subject}
+                              </td>
+                              <td className="px-3 sm:px-6 py-4">
+                                <span
+                                  className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
+                                  style={{
+                                    background:
+                                      resource.fileType === "pdf"
+                                        ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                                        : resource.fileType === "ppt"
+                                          ? "linear-gradient(135deg, #f97316, #ea580c)"
+                                          : resource.fileType === "doc"
+                                            ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+                                            : resource.fileType === "image"
+                                              ? "linear-gradient(135deg, #10b981, #059669)"
+                                              : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                  }}
+                                >
+                                  {resource.fileType}
+                                </span>
+                              </td>
+                              <td className="hidden sm:table-cell px-6 py-4 text-sm text-slate-500">
+                                {new Date(
+                                  resource.createdAt,
+                                ).toLocaleDateString()}
+                              </td>
+                              <td className="px-3 sm:px-6 py-4 text-center">
+                                <button
+                                  onClick={() =>
+                                    handleDeleteResource(resource._id)
+                                  }
+                                  className="px-2 sm:px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors"
+                                  title="Delete resource"
+                                >
+                                  <span className="hidden sm:inline">
+                                    Delete
+                                  </span>
+                                  <span className="sm:hidden">🗑️</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -268,62 +377,157 @@ const AdminPanel = () => {
                     <p className="text-slate-400 text-lg">No users found</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl">
-                    <table className="w-full min-w-[500px]">
-                      <thead>
-                        <tr
+                  <>
+                    <div className="rounded-xl">
+                      <table className="w-full">
+                        <thead>
+                          <tr
+                            style={{
+                              background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            }}
+                          >
+                            <th className="px-3 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tl-xl">
+                              Name
+                            </th>
+                            <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                              Email
+                            </th>
+                            <th className="px-3 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider sm:rounded-none rounded-tr-xl">
+                              Role
+                            </th>
+                            <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                              Joined
+                            </th>
+                            <th className="hidden sm:table-cell px-6 py-4 text-center text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tr-xl">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {users.map((user) => (
+                            <tr
+                              key={user._id}
+                              className="hover:bg-slate-100 transition-colors duration-150 cursor-pointer sm:cursor-default"
+                              onClick={() => {
+                                if (window.innerWidth < 640) {
+                                  setMobileUserActionPopup(user);
+                                }
+                              }}
+                            >
+                              <td className="px-3 sm:px-6 py-4">
+                                <div className="text-sm font-medium text-slate-700 truncate">
+                                  {user.name}
+                                </div>
+                                <div className="sm:hidden text-xs text-slate-500 mt-0.5 truncate">
+                                  {user.email}
+                                </div>
+                              </td>
+                              <td className="hidden sm:table-cell px-6 py-4 text-sm text-slate-500">
+                                {user.email}
+                              </td>
+                              <td className="px-3 sm:px-6 py-4">
+                                <span
+                                  className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
+                                  style={{
+                                    background: user.isAdmin
+                                      ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                                      : "linear-gradient(135deg, #10b981, #059669)",
+                                  }}
+                                >
+                                  {user.isAdmin ? "Admin" : "Student"}
+                                </span>
+                              </td>
+                              <td className="hidden sm:table-cell px-6 py-4 text-sm text-slate-500">
+                                {new Date(user.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="hidden sm:table-cell px-6 py-4 text-center">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteUser(user._id);
+                                  }}
+                                  className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors whitespace-nowrap"
+                                  title="Delete user"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Mobile User Action Popup */}
+            {mobileUserActionPopup && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50 sm:hidden">
+                <div
+                  className="rounded-t-3xl w-full animate-slideUp"
+                  style={{ backgroundColor: "var(--neu-bg)" }}
+                >
+                  <div className="px-4 py-4 border-b border-slate-300/50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700 text-lg line-clamp-2 flex-1">
+                      {mobileUserActionPopup.name}
+                    </h3>
+                    <button
+                      onClick={() => setMobileUserActionPopup(null)}
+                      className="text-2xl text-slate-500 hover:text-slate-700 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="px-4 py-4 space-y-3">
+                    <div className="neu-inset rounded-xl p-4 space-y-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Email
+                        </span>
+                        <span className="text-sm text-slate-700 font-medium break-all">
+                          {mobileUserActionPopup.email}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Role
+                        </span>
+                        <span
+                          className="inline-block px-2 py-0.5 rounded-full text-xs font-bold text-white"
                           style={{
-                            background:
-                              "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            background: mobileUserActionPopup.isAdmin
+                              ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                              : "linear-gradient(135deg, #10b981, #059669)",
                           }}
                         >
-                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tl-xl">
-                            Name
-                          </th>
-                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
-                            Email
-                          </th>
-                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
-                            Role
-                          </th>
-                          <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tr-xl">
-                            Joined
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {users.map((user) => (
-                          <tr
-                            key={user._id}
-                            className="hover:bg-slate-100 transition-colors duration-150"
-                          >
-                            <td className="px-4 sm:px-6 py-4 text-sm font-medium text-slate-700">
-                              {user.name}
-                            </td>
-                            <td className="px-4 sm:px-6 py-4 text-sm text-slate-500">
-                              {user.email}
-                            </td>
-                            <td className="px-4 sm:px-6 py-4">
-                              <span
-                                className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
-                                style={{
-                                  background: user.isAdmin
-                                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                                    : "linear-gradient(135deg, #10b981, #059669)",
-                                }}
-                              >
-                                {user.isAdmin ? "Admin" : "Student"}
-                              </span>
-                            </td>
-                            <td className="px-4 sm:px-6 py-4 text-sm text-slate-500">
-                              {new Date(user.createdAt).toLocaleDateString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                          {mobileUserActionPopup.isAdmin ? "Admin" : "Student"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Joined
+                        </span>
+                        <span className="text-sm text-slate-700 font-medium">
+                          {new Date(
+                            mobileUserActionPopup.createdAt,
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleDeleteUser(mobileUserActionPopup._id);
+                        setMobileUserActionPopup(null);
+                      }}
+                      className="neu-btn-danger w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                    >
+                      Delete User
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </>
@@ -332,8 +536,8 @@ const AdminPanel = () => {
 
       <DeleteConfirmationModal
         isOpen={deleteModal.isOpen}
-        title="Delete Resource"
-        message="Are you sure you want to delete this resource? This action cannot be undone."
+        title={`Delete ${deleteModal.type === "user" ? "User" : "Resource"}`}
+        message={`Are you sure you want to delete this ${deleteModal.type === "user" ? "user" : "resource"}? This action cannot be undone.`}
         itemName={deleteModal.resourceName}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}

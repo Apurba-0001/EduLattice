@@ -14,6 +14,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("stats");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mobileUserPopup, setMobileUserPopup] = useState(null);
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     type: null, // 'resource' or 'user'
@@ -376,8 +377,8 @@ const AdminDashboard = () => {
                     <p className="text-slate-400 text-lg">No users found</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl">
-                    <table className="w-full min-w-[500px] border-collapse">
+                  <div className="rounded-xl">
+                    <table className="w-full">
                       <thead>
                         <tr
                           style={{
@@ -385,19 +386,19 @@ const AdminDashboard = () => {
                               "linear-gradient(135deg, #6366f1, #8b5cf6)",
                           }}
                         >
-                          <th className="px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider rounded-tl-xl">
+                          <th className="px-3 sm:px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider rounded-tl-xl">
                             Name
                           </th>
-                          <th className="px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          <th className="hidden sm:table-cell px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
                             Email
                           </th>
-                          <th className="px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Admin Status
+                          <th className="px-3 sm:px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider sm:rounded-none rounded-tr-xl">
+                            Role
                           </th>
-                          <th className="px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          <th className="hidden sm:table-cell px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
                             Joined
                           </th>
-                          <th className="px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider rounded-tr-xl">
+                          <th className="hidden sm:table-cell px-5 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider rounded-tr-xl">
                             Actions
                           </th>
                         </tr>
@@ -406,17 +407,27 @@ const AdminDashboard = () => {
                         {users.map((u) => (
                           <tr
                             key={u._id}
-                            className="hover:bg-slate-100 transition-colors duration-150"
+                            className="hover:bg-slate-100 transition-colors duration-150 cursor-pointer sm:cursor-default"
+                            onClick={() => {
+                              if (window.innerWidth < 640) {
+                                setMobileUserPopup(u);
+                              }
+                            }}
                           >
-                            <td className="px-5 py-4 text-sm font-medium text-slate-700">
-                              {u.name}
+                            <td className="px-3 sm:px-5 py-4">
+                              <div className="text-sm font-medium text-slate-700 truncate">
+                                {u.name}
+                              </div>
+                              <div className="sm:hidden text-xs text-slate-500 mt-0.5 truncate">
+                                {u.email}
+                              </div>
                             </td>
-                            <td className="px-5 py-4 text-sm text-slate-500">
+                            <td className="hidden sm:table-cell px-5 py-4 text-sm text-slate-500">
                               {u.email}
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="px-3 sm:px-5 py-4">
                               <span
-                                className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
+                                className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
                                 style={{
                                   background: u.isAdmin
                                     ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
@@ -426,20 +437,21 @@ const AdminDashboard = () => {
                                 {u.isAdmin ? "Admin" : "Student"}
                               </span>
                             </td>
-                            <td className="px-5 py-4 text-sm text-slate-500">
+                            <td className="hidden sm:table-cell px-5 py-4 text-sm text-slate-500">
                               {new Date(u.createdAt).toLocaleDateString()}
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="hidden sm:table-cell px-5 py-4 text-center">
                               {u.isAdmin ? (
                                 <span className="text-slate-400 text-sm italic">
                                   Protected
                                 </span>
                               ) : (
                                 <button
-                                  onClick={() =>
-                                    handleDeleteUser(u._id, u.isAdmin)
-                                  }
-                                  className="neu-btn-danger px-4 py-2 rounded-lg text-xs font-semibold uppercase"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteUser(u._id, u.isAdmin);
+                                  }}
+                                  className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors whitespace-nowrap"
                                 >
                                   Remove
                                 </button>
@@ -451,6 +463,84 @@ const AdminDashboard = () => {
                     </table>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Mobile User Action Popup */}
+            {mobileUserPopup && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50 sm:hidden">
+                <div
+                  className="rounded-t-3xl w-full animate-slideUp"
+                  style={{ backgroundColor: "var(--neu-bg)" }}
+                >
+                  <div className="px-4 py-4 border-b border-slate-300/50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700 text-lg line-clamp-2 flex-1">
+                      {mobileUserPopup.name}
+                    </h3>
+                    <button
+                      onClick={() => setMobileUserPopup(null)}
+                      className="text-2xl text-slate-500 hover:text-slate-700 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="px-4 py-4 space-y-3">
+                    <div className="neu-inset rounded-xl p-4 space-y-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Email
+                        </span>
+                        <span className="text-sm text-slate-700 font-medium break-all">
+                          {mobileUserPopup.email}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Role
+                        </span>
+                        <span
+                          className="inline-block px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                          style={{
+                            background: mobileUserPopup.isAdmin
+                              ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                              : "linear-gradient(135deg, #10b981, #059669)",
+                          }}
+                        >
+                          {mobileUserPopup.isAdmin ? "Admin" : "Student"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Joined
+                        </span>
+                        <span className="text-sm text-slate-700 font-medium">
+                          {new Date(
+                            mobileUserPopup.createdAt,
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    {!mobileUserPopup.isAdmin && (
+                      <button
+                        onClick={() => {
+                          handleDeleteUser(
+                            mobileUserPopup._id,
+                            mobileUserPopup.isAdmin,
+                          );
+                          setMobileUserPopup(null);
+                        }}
+                        className="neu-btn-danger w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                      >
+                        Delete User
+                      </button>
+                    )}
+                    {mobileUserPopup.isAdmin && (
+                      <div className="text-center text-slate-400 text-sm italic py-2">
+                        Admin users are protected
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

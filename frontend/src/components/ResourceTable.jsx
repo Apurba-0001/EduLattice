@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 
@@ -10,7 +10,6 @@ const ResourceTable = ({
 }) => {
   const { isAdmin } = useAuth();
   const [selectedResource, setSelectedResource] = useState(null);
-  const [expandedRowId, setExpandedRowId] = useState(null);
   const [mobileActionPopup, setMobileActionPopup] = useState(null);
 
   const handleViewDetails = async (resource) => {
@@ -152,177 +151,132 @@ const ResourceTable = ({
 
   return (
     <>
-      <div className="w-full overflow-hidden">
-        {/* Mobile scroll indicator */}
-        <div className="sm:hidden text-xs text-slate-500 text-center mb-3 py-2 neu-inset rounded-xl font-medium">
-          ← Swipe to scroll table →
-        </div>
-
-        {/* Table container — shadow wrapper + clip wrapper */}
-        <div style={{ boxShadow: "var(--neu-raised)" }}>
-          <div
-            className="rounded-2xl overflow-hidden -mx-4 sm:mx-0"
-            style={{
-              border: "1px solid rgba(184, 192, 204, 0.5)",
-            }}
-          >
-            <div className="overflow-x-auto">
-              <table
-                className="w-full"
-                style={{
-                  minWidth: "800px",
-                  borderCollapse: "separate",
-                  borderSpacing: 0,
+      <div className="overflow-x-auto rounded-xl">
+        <table className="w-full">
+          <thead>
+            <tr
+              style={{
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              }}
+            >
+              <th className="px-3 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tl-xl">
+                Title
+              </th>
+              <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                Subject
+              </th>
+              <th className="px-3 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                Type
+              </th>
+              <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-semibold text-white uppercase tracking-wider">
+                Uploaded
+              </th>
+              {showActions && (
+                <th className="px-3 sm:px-6 py-4 text-center text-xs sm:text-sm font-semibold text-white uppercase tracking-wider rounded-tr-xl">
+                  Actions
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {resources.map((resource) => (
+              <tr
+                key={resource._id}
+                className="hover:bg-slate-100 transition-colors duration-150 cursor-pointer sm:cursor-default"
+                onClick={() => {
+                  if (window.innerWidth < 768) {
+                    setMobileActionPopup(resource);
+                  }
                 }}
               >
-                {/* Table Header */}
-                <thead>
-                  <tr
+                <td className="px-3 sm:px-6 py-4">
+                  <div className="text-sm font-medium text-slate-700">
+                    {resource.title}
+                    {resource.imageGroupId && (
+                      <span className="ml-2 inline-block px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-bold">
+                        x{resource.imageGroupCount || 1}
+                      </span>
+                    )}
+                  </div>
+                  <div className="sm:hidden text-xs text-slate-500 mt-0.5 truncate max-w-[160px]">
+                    {resource.subject}
+                  </div>
+                </td>
+                <td className="hidden sm:table-cell px-6 py-4 text-sm text-slate-500">
+                  {resource.subject}
+                </td>
+                <td className="px-3 sm:px-6 py-4">
+                  <span
+                    className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
                     style={{
-                      boxShadow: "inset 0 -1px 0 rgba(184, 192, 204, 0.6)",
+                      background:
+                        resource.fileType === "pdf"
+                          ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                          : resource.fileType === "ppt"
+                            ? "linear-gradient(135deg, #f97316, #ea580c)"
+                            : resource.fileType === "doc"
+                              ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+                              : resource.fileType === "image"
+                                ? "linear-gradient(135deg, #10b981, #059669)"
+                                : "linear-gradient(135deg, #6366f1, #8b5cf6)",
                     }}
                   >
-                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[200px]">
-                      Title
-                    </th>
-                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[150px]">
-                      Subject
-                    </th>
-                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[130px]">
-                      Semester
-                    </th>
-                    <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[160px]">
-                      Resource Type
-                    </th>
-                    {showActions && (
-                      <th
-                        className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap min-w-[200px]"
-                        style={{
-                          borderLeft: "1px solid rgba(184, 192, 204, 0.5)",
-                          boxShadow: "inset 0 -1px 0 rgba(184, 192, 204, 0.6)",
+                    {resource.fileType}
+                  </span>
+                </td>
+                <td className="hidden sm:table-cell px-6 py-4 text-sm text-slate-500">
+                  {formatDate(resource.createdAt)}
+                </td>
+                {showActions && (
+                  <td className="px-3 sm:px-6 py-4 text-center">
+                    <div className="hidden sm:flex gap-2 justify-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(resource);
                         }}
+                        className="px-2 sm:px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-xs font-bold transition-colors"
+                        title="Download resource"
                       >
-                        Actions
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-
-                {/* Table Body */}
-                <tbody>
-                  {resources.map((resource, index) => (
-                    <React.Fragment key={resource._id}>
-                      <tr
-                        onClick={() => {
-                          if (window.innerWidth < 768) {
-                            setMobileActionPopup(resource);
-                          }
+                        Download
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetails(resource);
                         }}
-                        className="transition-colors sm:cursor-default cursor-pointer"
-                        style={{
-                          boxShadow: "inset 0 -1px 0 rgba(184, 192, 204, 0.5)",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (window.innerWidth >= 640)
-                            e.currentTarget.style.backgroundColor =
-                              "var(--neu-bg-dark)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "";
-                        }}
+                        className="px-2 sm:px-3 py-1.5 bg-slate-500 hover:bg-slate-600 text-white rounded text-xs font-bold transition-colors"
+                        title="View details"
                       >
-                        {/* Title */}
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-700 min-w-[200px]">
-                          <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-wrap">
-                            <span className="line-clamp-2 overflow-hidden">
-                              {resource.title}
-                            </span>
-                            {resource.imageGroupId && (
-                              <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0">
-                                x{resource.imageGroupCount || 1} files
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Subject */}
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 min-w-[150px]">
-                          <span className="line-clamp-1">
-                            {resource.subject}
-                          </span>
-                        </td>
-
-                        {/* Semester */}
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 min-w-[130px]">
-                          <span className="inline-block px-2 sm:px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full font-medium text-xs">
-                            {resource.semester}
-                          </span>
-                        </td>
-
-                        {/* Resource Type */}
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 min-w-[160px]">
-                          <span className="inline-block px-2 sm:px-3 py-1 bg-violet-100 text-violet-700 rounded-full font-medium text-xs">
-                            {resource.resourceType}
-                          </span>
-                        </td>
-
-                        {/* Actions */}
-                        {showActions && (
-                          <td
-                            className="px-2 sm:px-4 md:px-6 py-3 sm:py-4 min-w-[220px]"
-                            style={{
-                              borderLeft: "1px solid rgba(184, 192, 204, 0.5)",
-                              boxShadow:
-                                "inset 0 -1px 0 rgba(184, 192, 204, 0.5)",
-                            }}
-                          >
-                            <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
-                              <button
-                                onClick={() => handleDownload(resource)}
-                                className="neu-btn-primary px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap"
-                                title="Download resource"
-                              >
-                                <span className="hidden sm:inline">
-                                  Download
-                                </span>
-                                <span className="sm:hidden">↓</span>
-                              </button>
-                              <button
-                                onClick={() => handleViewDetails(resource)}
-                                className="neu-btn px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap text-indigo-600"
-                                title="View details"
-                              >
-                                <span className="hidden sm:inline">Info</span>
-                                <span className="sm:hidden">i</span>
-                              </button>
-                              {onDelete && (
-                                <button
-                                  onClick={() => onDelete(resource._id)}
-                                  disabled={isDeleting}
-                                  className={`px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 ${
-                                    isDeleting
-                                      ? "opacity-50 cursor-not-allowed neu-btn text-slate-400"
-                                      : "neu-btn-danger"
-                                  }`}
-                                  title="Delete resource"
-                                >
-                                  <span className="hidden sm:inline">
-                                    {isDeleting ? "Deleting..." : "Delete"}
-                                  </span>
-                                  <span className="sm:hidden">✕</span>
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                        Info
+                      </button>
+                      {onDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(resource._id);
+                          }}
+                          disabled={isDeleting}
+                          className={`px-2 sm:px-3 py-1.5 rounded text-xs font-bold transition-colors ${
+                            isDeleting
+                              ? "opacity-50 cursor-not-allowed bg-slate-300 text-slate-400"
+                              : "bg-red-500 hover:bg-red-600 text-white"
+                          }`}
+                          title="Delete resource"
+                        >
+                          {isDeleting ? "..." : "Delete"}
+                        </button>
+                      )}
+                    </div>
+                    <div className="sm:hidden">
+                      <span className="text-xs text-slate-400">Tap row</span>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Detail Modal */}
