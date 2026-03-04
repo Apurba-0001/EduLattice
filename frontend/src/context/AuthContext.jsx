@@ -58,21 +58,31 @@ export const AuthProvider = ({ children }) => {
 
   // Logout when browser closes
   useEffect(() => {
-    const handleBeforeUnload = async () => {
+    const handleBeforeUnload = (e) => {
       // Clear auth data when user closes the browser
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+
+      // Try to notify backend (may not complete if browser closes)
       try {
-        await api.post("/auth/logout");
+        navigator.sendBeacon("/api/auth/logout");
       } catch (error) {
-        console.error("Logout on close error:", error);
-      } finally {
-        localStorage.removeItem("user");
+        console.error("Logout beacon error:", error);
       }
+
+      // Return undefined (modern browsers don't show custom messages)
+      return undefined;
     };
 
+    // Listen to beforeunload (tab/window close)
     window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Also listen to pagehide for better mobile support
+    window.addEventListener("pagehide", handleBeforeUnload);
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handleBeforeUnload);
     };
   }, []);
 
