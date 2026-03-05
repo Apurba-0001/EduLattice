@@ -1,9 +1,10 @@
 # EduLattice - Online Learning Resource Sharing Platform
 
-A full-stack web application for sharing and managing educational resources within an academic class. Built with the MERN stack, with all files securely stored on Cloudinary for optimal performance and reliability.
+A full-stack web application for sharing and managing educational resources within an academic class. Built with the MERN stack (MongoDB, Express, React, Node.js), with all files securely stored on Cloudinary for optimal performance and reliability.
 
-![EduLattice](https://img.shields.io/badge/EduLattice-v2.0.0-blue)
+![EduLattice](https://img.shields.io/badge/EduLattice-v1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue)
 
 ## 📋 Table of Contents
 
@@ -16,8 +17,8 @@ A full-stack web application for sharing and managing educational resources with
 - [Running the Application](#running-the-application)
 - [Deployment](#deployment)
 - [API Documentation](#api-documentation)
-- [Screenshots](#screenshots)
-- [Contributing](#contributing)
+- [Features Demonstration](#-features-demonstration)
+- [Security Features](#-security-features)
 - [License](#license)
 
 ## ✨ Features
@@ -92,7 +93,7 @@ A full-stack web application for sharing and managing educational resources with
 - **Cloud Storage**: Cloudinary SDK (documents, images, archives)
 - **UUID Generation**: uuid v4 for unique file identification
 - **Archiver**: For creating zip files of grouped resources
-- **Session Management**: Token-based with Redis support ready
+- **Session Management**: Token-based JWT authentication (1-hour expiry)
 
 ### Frontend
 
@@ -101,7 +102,6 @@ A full-stack web application for sharing and managing educational resources with
 - **Routing**: React Router DOM v6
 - **HTTP Client**: Axios with interceptors
 - **Styling**: Tailwind CSS with responsive design
-- **Form Handling**: React Hook Form (implicit)
 - **State Management**: React Context API for authentication
 
 ### Deployment
@@ -396,10 +396,28 @@ Content-Type: application/json
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "password123",
-  "role": "student"
+  "password": "Password@123"
 }
 ```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "isAdmin": false,
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  "message": "User registered successfully"
+}
+```
+
+**Note:** `isAdmin` is always `false` on self-registration. Admin roles can only be assigned directly in the database.
 
 #### Login
 
@@ -409,9 +427,46 @@ Content-Type: application/json
 
 {
   "email": "john@example.com",
-  "password": "password123"
+  "password": "Password@123"
 }
 ```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "isAdmin": false,
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  "message": "Login successful"
+}
+```
+
+**Note:** JWT token expires in 1 hour. The token includes `lastActivity` tracking for monitoring user sessions.
+
+#### Logout
+
+```http
+POST /api/auth/logout
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+**Note:** This is a stateless logout. The client should discard the JWT token after receiving this response.
 
 #### Get Current User
 
@@ -426,6 +481,42 @@ Authorization: Bearer <token>
 GET /api/auth/users
 Authorization: Bearer <token>
 ```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "count": 15,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### Delete User (Admin)
+
+```http
+DELETE /api/auth/users/:id
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "User deleted successfully"
+}
+```
+
+**Note:** Admin users cannot be deleted through this endpoint. Use database administration tools to manage admin accounts.
 
 ### Resource Endpoints
 
@@ -588,33 +679,28 @@ Authorization: Bearer <token>
 }
 ```
 
-## 📸 Screenshots
+## 📸 Features Demonstration
 
-### Login Page
+You can test the application using the following test credentials:
 
-User-friendly authentication interface with form validation.
+**Admin Account:**
 
-### Dashboard
+- Email: admin@edulattice.com
+- Password: Admin@123456 (adjust to your actual test credentials)
 
-Browse all resources with search and filtering capabilities.
+**Student Account:**
 
-### Upload Resource
-
-Simple form to upload educational materials with metadata.
-
-### My Uploads
-
-Manage your uploaded resources with delete functionality.
-
-### Admin Panel
-
-Comprehensive admin dashboard with statistics and user management.
+- Email: student@edulattice.com
+- Password: Student@123456 (adjust to your actual test credentials)
 
 ## 🔒 Security Features
 
-- **Password Hashing**: bcrypt with 10 salt rounds
-- **JWT Authentication**: Secure token-based authentication with configurable expiration
-- **Input Validation**: Server-side validation for all inputs with descriptive error messages
+- **Password Requirements**: Minimum 8 characters including uppercase, lowercase, number, and special character (@$!%\*?&)
+- **Password Hashing**: bcrypt with 10 salt rounds (never stored in plain text)
+- **JWT Authentication**: Secure token-based authentication with 1-hour token expiry and activity tracking
+- **Rate Limiting**: Brute-force protection on authentication endpoints (configurable via environment variables)
+- **Input Validation**: Comprehensive server-side validation for all inputs with descriptive error messages
+- **NoSQL Injection Prevention**: Type checking and sanitization using express-mongo-sanitize
 - **File Type Validation**:
   - Strict MIME type checking
   - Extension whitelist for safe file types
@@ -626,7 +712,7 @@ Comprehensive admin dashboard with statistics and user management.
 - **CORS Protection**: Configured allowed origins for secure cross-origin requests
 - **Authorization Middleware**: Resource-level access control (owner or admin can modify/delete)
 - **XSS Protection**: React's built-in escaping of rendered content
-- **SQL Injection Prevention**: MongoDB with parameterized queries (no concatenation)
+- **Security Headers**: Helmet.js for HTTP security headers and CSP policies
 - **Cloudinary Security**: API credentials stored server-side, never exposed to client
 - **HTTPS Recommended**: Configuration for secure production deployment
 
@@ -639,64 +725,61 @@ Comprehensive admin dashboard with statistics and user management.
 - **Office Macros**: .docm, .xlsm, .pptm
 - **Java**: .jar, .class, .jnlp
 
-Users receive descriptive error messages explaining why each file type is blocked.
-
 ## 🧪 Testing
 
 ### Test User Accounts
 
-After installation, create test accounts:
+After installation, you can:
 
-**Admin Account:**
+1. Create test accounts through the registration page
+2. Use different users to test resource sharing and access control
+3. Log in as both student and admin roles to verify role-based features
 
-- Email: admin@edulattice.com
-- Password: admin123
-- Role: admin
+### Testing Core Features
 
-**Student Account:**
+1. **Authentication**
+   - Register a new user account
+   - Login with registered credentials
+   - Verify JWT token is issued on successful login
+   - Test invalid credentials handling
 
-- Email: student@edulattice.com
-- Password: student123
-- Role: student
+2. **Resource Upload**
+   - Upload single document (PDF, PPT, DOCX, XLSX)
+   - Upload multiple images (up to 5 grouped together)
+   - Verify file size limits are enforced
+   - Check metadata is saved correctly
 
-### Testing Upload Functionality
+3. **File Management**
+   - Upload files and verify they appear in "My Uploads"
+   - View resource details
+   - Download resources (increments download count)
+   - Archive resources instead of deleting
+   - Test dangerous file type detection (blocked files)
 
-1. **Single Document Upload**
-   - Upload a PDF, PPT, or DOCX file
-   - Verify metadata is saved correctly
-   - Check view/download counts start at 0
-
-2. **Multiple Image Upload**
-   - Upload 2-5 images at once
-   - Verify they're grouped with same `imageGroupId`
-   - Verify only one row appears in "All Resources"
-   - Download group and verify ZIP contains all images
-
-3. **File Size Validation**
-   - Try uploading a 30MB document (should fail)
-   - Try uploading 6 images (should fail)
-   - Try uploading 60MB of images total (should fail)
-
-4. **Dangerous File Detection**
-   - Try uploading a .exe file (should fail with descriptive message)
-   - Try uploading a .zip file (should fail)
-   - Try uploading a .docm file (should fail)
+4. **Search & Discovery**
+   - Search resources by keyword
+   - Filter by subject and semester
+   - Sort by date, views, or downloads
+   - Verify pagination works correctly
 
 5. **View & Download Tracking**
    - Click "View Details" on a resource
-   - Verify view count increments
-   - Download the resource
+   - Verify view count increments in real-time
+   - Download a resource
    - Verify download count increments
-   - Check in "Most Viewed" sort order
+   - Check that own uploads don't increment views/downloads
 
-### Testing Admin Features
+6. **Admin Features**
+   - Admin Dashboard: View platform statistics
+   - Admin Panel: Manage all resources and users
+   - Delete resources as admin
+   - View all registered users
+   - Access filtering and search on admin pages
 
-1. Log in as admin user
-2. Visit Admin Dashboard
-3. Verify statistics display correct counts
-4. Verify users list shows all registered users
-5. Test deleting a resource as admin
-6. Verify cascading deletion from Cloudinary
+7. **File Size Validation**
+   - Try uploading a document exceeding 25MB (should fail)
+   - Try uploading 6+ images (should fail)
+   - Try uploading 60MB+ of images in groups (should fail)
 
 ## 🤝 Contributing
 
@@ -709,11 +792,15 @@ After installation, create test accounts:
 
 ### Development Guidelines
 
-- Follow existing code style and patterns
-- Add comments for complex logic
-- Test new features with sample data
-- Update documentation for API changes
-- Ensure no console.log statements in production code
+- Follow the existing code structure and patterns established in the project
+- Maintain security standards: validate inputs on both client and server
+- Use centralized error messages from `constants/errorMessages.js` (frontend)
+- Add descriptive comments for complex business logic
+- Test new features with sample data before committing
+- Ensure no sensitive data (API keys, passwords) are committed
+- Keep console.log statements minimal and use only for debugging during development
+- Follow the architectural patterns shown in existing controllers and components
+- Respect the role-based access control patterns (PrivateRoute, AdminRoute)
 
 ## 📚 Database Schema
 
@@ -725,7 +812,8 @@ After installation, create test accounts:
   name: String,
   email: String (unique),
   password: String (hashed with bcrypt),
-  isAdmin: Boolean (default: false),
+  isAdmin: Boolean (default: false, immutable after creation),
+  lastActivity: Date (tracks last login time for activity monitoring),
   createdAt: Date,
   updatedAt: Date
 }
@@ -822,24 +910,24 @@ For bug reports, feature requests, or general support:
 2. **Email**: support@edulattice.com
 3. **Documentation**: Check existing docs before reporting
 
-## 🚀 Roadmap
+## 🚀 Future Enhancements
 
-### Planned Features
+Potential improvements for future versions:
 
-- [ ] Social sharing (share resources via link)
-- [ ] Resource ratings and reviews
-- [ ] Collaborative resource editing
-- [ ] Video file support (with transcoding)
-- [ ] Resource collections and playlists
-- [ ] Email notifications for new resources
-- [ ] Mobile app (React Native)
-- [ ] Advanced analytics dashboard
-- [ ] Integration with learning management systems
-- [ ] Resource recommendations based on views
+- [ ] Advanced resource filtering with more granular controls
+- [ ] Bulk resource uploads with batch operations
+- [ ] Resource comments and discussions
+- [ ] User activity feed and notifications
+- [ ] Enhanced search with full-text indexing
+- [ ] Duplicate resource detection
+- [ ] Resource tags and categorization system
+- [ ] User profile customization
+- [ ] Export analytics reports (CSV, PDF)
+- [ ] API rate limiting customization per user tier
 
 ### Current Version
 
-**v2.0.0** - Cloudinary-only storage, view tracking, image grouping
+**v1.0.0** - Core functionality with Cloudinary storage, view/download tracking, image grouping, and admin dashboard
 
 ---
 
