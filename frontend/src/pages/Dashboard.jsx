@@ -54,6 +54,8 @@ const Dashboard = () => {
       if (filters.resourceType)
         queryParams.append("resourceType", filters.resourceType);
 
+      // Add large limit to show all resources
+      queryParams.append("limit", 1000);
       const response = await api.get(`/resources?${queryParams.toString()}`);
       setResources(response.data.data);
       setError("");

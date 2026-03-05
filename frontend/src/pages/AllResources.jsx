@@ -51,6 +51,8 @@ const AllResources = () => {
       // Add sorting parameters
       queryParams.append("sortBy", sorting.sortBy);
       queryParams.append("sortOrder", sorting.sortOrder);
+      // Add large limit to show all resources
+      queryParams.append("limit", 1000);
 
       const response = await api.get(`/resources?${queryParams.toString()}`);
       setResources(response.data.data || []);
@@ -150,6 +152,8 @@ const AllResources = () => {
 
       queryParams.append("sortBy", newSorting.sortBy);
       queryParams.append("sortOrder", newSorting.sortOrder);
+      // Add large limit to show all resources
+      queryParams.append("limit", 1000);
 
       api
         .get(`/resources?${queryParams.toString()}`)
