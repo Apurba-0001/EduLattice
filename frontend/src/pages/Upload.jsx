@@ -237,14 +237,13 @@ const Upload = () => {
               style={{ animationDelay: "0.05s" }}
             >
               <label className="block text-xs sm:text-sm font-bold text-slate-600 mb-2 sm:mb-3 uppercase tracking-wide">
-                📄 Description *
+                📄 Description
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Describe what this resource contains, topics covered, difficulty level, etc."
-                required
                 maxLength={1000}
                 rows="5"
                 onKeyDown={(e) => {
