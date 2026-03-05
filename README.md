@@ -192,7 +192,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/edulattice.git
+git clone https://github.com/Apurba-0001/edulattice.git
 cd edulattice
 ```
 
