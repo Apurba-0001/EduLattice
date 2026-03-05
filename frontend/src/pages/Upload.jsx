@@ -137,7 +137,9 @@ const Upload = () => {
 
       // Append form fields
       uploadData.append("title", formData.title);
-      uploadData.append("description", formData.description);
+      if (formData.description.trim()) {
+        uploadData.append("description", formData.description.trim());
+      }
       uploadData.append("subject", formData.subject);
       uploadData.append("semester", formData.semester);
       uploadData.append("resourceType", formData.resourceType);

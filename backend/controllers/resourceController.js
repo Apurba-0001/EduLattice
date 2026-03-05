@@ -186,7 +186,7 @@ export const uploadResource = async (req, res) => {
     const files = req.files;
 
     // Validation
-    if (!title || !description || !subject || !semester || !resourceType) {
+    if (!title || !subject || !semester || !resourceType) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields",
@@ -196,7 +196,7 @@ export const uploadResource = async (req, res) => {
     // SECURITY: Ensure all text inputs are strings (blocks NoSQL operator injection)
     if (
       typeof title !== "string" ||
-      typeof description !== "string" ||
+      (description !== undefined && typeof description !== "string") ||
       typeof subject !== "string" ||
       typeof semester !== "string" ||
       typeof resourceType !== "string"
@@ -362,7 +362,8 @@ export const uploadResource = async (req, res) => {
       const resource = await Resource.create({
         fileId,
         title,
-        description,
+        description:
+          description && description.trim() ? description.trim() : null,
         subject,
         semester,
         resourceType,

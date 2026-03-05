@@ -17,6 +17,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+    // Treat any API call as user activity to prevent inactivity logout
+    // while the user is actively using the app (uploading, navigating, etc.)
+    window.dispatchEvent(new Event("user-activity"));
     return config;
   },
   (error) => Promise.reject(error),

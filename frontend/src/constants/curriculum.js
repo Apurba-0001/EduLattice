@@ -12,6 +12,7 @@ export const CURRICULUM_DATA = [
   { semester: "Semester I", subject: "Programming for Problem Solving Lab" },
   { semester: "Semester I", subject: "Workshop and Manufacturing Practices" },
   { semester: "Semester I", subject: "Environmental Science" },
+  { semester: "Semester I", subject: "Other" },
   {
     semester: "Semester II",
     subject: "Effective Communication and Soft Skills",
@@ -30,6 +31,7 @@ export const CURRICULUM_DATA = [
   },
   { semester: "Semester II", subject: "Engineering Graphics and Design Lab" },
   { semester: "Semester II", subject: "Yoga and Sports" },
+  { semester: "Semester II", subject: "Other" },
   { semester: "Semester III", subject: "Probability and Statistics" },
   { semester: "Semester III", subject: "Python Programming" },
   {
@@ -44,6 +46,7 @@ export const CURRICULUM_DATA = [
   },
   { semester: "Semester III", subject: "Database Management Systems Lab" },
   { semester: "Semester III", subject: "Constitution of India" },
+  { semester: "Semester III", subject: "Other" },
   {
     semester: "Semester IV",
     subject: "Design Thinking for Entrepreneurship and Startups",
@@ -57,6 +60,7 @@ export const CURRICULUM_DATA = [
   { semester: "Semester IV", subject: "Design and Analysis of Algorithms Lab" },
   { semester: "Semester IV", subject: "Object Oriented Programming Lab" },
   { semester: "Semester IV", subject: "Basic Ai tool's and Application" },
+  { semester: "Semester IV", subject: "Other" },
   { semester: "Semester V", subject: "Computer Networks" },
   { semester: "Semester V", subject: "Distributed System" },
   { semester: "Semester V", subject: "Compiler Design" },
@@ -65,6 +69,7 @@ export const CURRICULUM_DATA = [
   { semester: "Semester V", subject: "Computer Networks Lab" },
   { semester: "Semester V", subject: "Distributed System Lab" },
   { semester: "Semester V", subject: "Compiler Design Lab" },
+  { semester: "Semester V", subject: "Other" },
   { semester: "Semester VI", subject: "Machine Learning" },
   { semester: "Semester VI", subject: "Data Mining and Data Warehousing" },
   { semester: "Semester VI", subject: "Internet of Things" },
@@ -72,6 +77,7 @@ export const CURRICULUM_DATA = [
   { semester: "Semester VI", subject: "Open Elective Course I" },
   { semester: "Semester VI", subject: "Machine Learning Lab" },
   { semester: "Semester VI", subject: "Data Mining and Data Warehousing Lab" },
+  { semester: "Semester VI", subject: "Other" },
   { semester: "Semester VII", subject: "Software Engineering" },
   { semester: "Semester VII", subject: "System Software and Administration" },
   { semester: "Semester VII", subject: "Professional Elective Course III" },
@@ -80,8 +86,10 @@ export const CURRICULUM_DATA = [
   { semester: "Semester VII", subject: "Software Tools and Techniques Lab" },
   { semester: "Semester VII", subject: "Industrial Training" },
   { semester: "Semester VII", subject: "Project I" },
+  { semester: "Semester VII", subject: "Other" },
   { semester: "Semester VIII", subject: "Project II" },
   { semester: "Semester VIII", subject: "Grand Viva Voce" },
+  { semester: "Semester VIII", subject: "Other" },
 ];
 
 // Get unique semesters

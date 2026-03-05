@@ -8,8 +8,8 @@ import {
 import api from "../utils/api";
 import useInactivityTimeout from "../hooks/useInactivityTimeout";
 
-// Fallback: 15 minutes (matches backend default)
-const DEFAULT_SESSION_TIMEOUT_MS = 15 * 60 * 1000;
+// Fallback: 20 minutes of inactivity
+const DEFAULT_SESSION_TIMEOUT_MS = 20 * 60 * 1000;
 
 const AuthContext = createContext();
 

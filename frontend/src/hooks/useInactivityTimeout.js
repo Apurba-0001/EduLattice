@@ -8,6 +8,7 @@ const ACTIVITY_EVENTS = [
   "touchstart",
   "click",
   "pointerdown",
+  "user-activity", // fired by API interceptor so network requests count as activity
 ];
 
 // Default: 20 minutes of inactivity
@@ -19,7 +20,7 @@ const DEFAULT_TIMEOUT_MS = 20 * 60 * 1000;
  * interaction (mouse, keyboard, touch, scroll).
  *
  * @param {Function} onTimeout - Called when inactivity timeout expires
- * @param {number}   timeoutMs - Inactivity duration in ms (default 15 min)
+ * @param {number}   timeoutMs - Inactivity duration in ms (default 20 min)
  * @param {boolean}  enabled   - Whether the timer is active (e.g. only when logged in)
  */
 export default function useInactivityTimeout(
@@ -57,13 +58,17 @@ export default function useInactivityTimeout(
     const handleActivity = () => resetTimer();
 
     ACTIVITY_EVENTS.forEach((event) => {
-      window.addEventListener(event, handleActivity, { passive: true });
+      // capture: true ensures events stopped by child components still reach us
+      window.addEventListener(event, handleActivity, {
+        passive: true,
+        capture: true,
+      });
     });
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       ACTIVITY_EVENTS.forEach((event) => {
-        window.removeEventListener(event, handleActivity);
+        window.removeEventListener(event, handleActivity, { capture: true });
       });
     };
   }, [enabled, resetTimer]);
