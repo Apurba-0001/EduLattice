@@ -9,6 +9,8 @@ const api = axios.create({
   // No cookie config, only Authorization header
 });
 
+let csrfToken = localStorage.getItem("csrfToken");
+
 // Handle responses
 // Attach Authorization header for all requests if token exists
 api.interceptors.request.use(
@@ -17,6 +19,16 @@ api.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+
+    // Add CSRF token for state-changing requests (POST, PUT, PATCH, DELETE)
+    if (
+      ["POST", "PUT", "PATCH", "DELETE"].includes(config.method.toUpperCase())
+    ) {
+      if (csrfToken) {
+        config.headers["X-CSRF-Token"] = csrfToken;
+      }
+    }
+
     // Treat any API call as user activity to prevent inactivity logout
     // while the user is actively using the app (uploading, navigating, etc.)
     window.dispatchEvent(new Event("user-activity"));
@@ -24,8 +36,18 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error),
 );
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Store CSRF token from response headers if present
+    const newCsrfToken = response.headers["x-csrf-token"];
+    if (newCsrfToken) {
+      csrfToken = newCsrfToken;
+      localStorage.setItem("csrfToken", newCsrfToken);
+    }
+
+    return response;
+  },
   (error) => {
     const isAuthEndpoint =
       error.config?.url?.includes("/auth/login") ||
@@ -34,6 +56,7 @@ api.interceptors.response.use(
       // SECURITY: Clear both token and user data on unauthorized access
       localStorage.removeItem("user");
       localStorage.removeItem("token");
+      localStorage.removeItem("csrfToken");
       // Redirect to login
       window.location.href = "/login";
     }

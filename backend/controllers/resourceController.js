@@ -4,6 +4,7 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import https from "https";
 import archiver from "archiver";
+import { logFileUpload } from "../middleware/securityLogging.js";
 
 // Helper function to check if file is dangerous and return description
 const getDangerousFileReason = (mimetype, filename) => {
@@ -384,6 +385,17 @@ export const uploadResource = async (req, res) => {
       createdResources.push(resource);
     }
 
+    // Log successful file upload
+    for (let i = 0; i < files.length; i++) {
+      logFileUpload(
+        req.user._id,
+        files[i].originalname,
+        files[i].size,
+        true,
+        null,
+      );
+    }
+
     res.status(201).json({
       success: true,
       data: createdResources,
@@ -396,6 +408,20 @@ export const uploadResource = async (req, res) => {
     if (process.env.NODE_ENV === "development") {
       console.error("Upload error:", error.message);
     }
+
+    // Log failed file upload
+    if (req.files && req.files.length > 0) {
+      for (let file of req.files) {
+        logFileUpload(
+          req.user._id,
+          file.originalname,
+          file.size,
+          false,
+          error.message,
+        );
+      }
+    }
+
     res.status(500).json({
       success: false,
       message: "Server error during file upload",

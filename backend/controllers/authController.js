@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import {
+  logAuthAttempt,
+  logUnauthorizedAccess,
+} from "../middleware/securityLogging.js";
 
 // Generate JWT Token — 1 hour expiry with lastActivity for inactivity tracking
 const generateToken = (id) => {
@@ -65,6 +69,9 @@ export const register = async (req, res) => {
     });
 
     const token = generateToken(user._id);
+    // Log successful registration
+    logAuthAttempt(email, true, req.ip);
+
     res.status(201).json({
       success: true,
       token,
@@ -81,6 +88,9 @@ export const register = async (req, res) => {
     if (process.env.NODE_ENV === "development") {
       console.error("Registration error:", error.message);
     }
+    // Log failed registration attempt
+    logAuthAttempt(req.body?.email, false, req.ip);
+
     // SECURITY: Never expose internal error.message in production
     res.status(500).json({
       success: false,
@@ -124,6 +134,9 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
+      // Log failed login attempt (user not found)
+      logAuthAttempt(email, false, req.ip);
+
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
@@ -134,6 +147,9 @@ export const login = async (req, res) => {
     const isPasswordMatch = await user.comparePassword(password);
 
     if (!isPasswordMatch) {
+      // Log failed login attempt (password mismatch)
+      logAuthAttempt(email, false, req.ip);
+
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
@@ -143,6 +159,9 @@ export const login = async (req, res) => {
     // Update last activity on successful login
     user.lastActivity = new Date();
     await user.save();
+
+    // Log successful login
+    logAuthAttempt(email, true, req.ip);
 
     const token = generateToken(user._id);
     res.status(200).json({
@@ -161,6 +180,9 @@ export const login = async (req, res) => {
     if (process.env.NODE_ENV === "development") {
       console.error("Login error:", error.message);
     }
+    // Log error during login
+    logAuthAttempt(req.body?.email, false, req.ip);
+
     res.status(500).json({
       success: false,
       message: "Server error during login",
