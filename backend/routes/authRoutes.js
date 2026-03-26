@@ -10,12 +10,6 @@ import {
 } from "../controllers/authController.js";
 import { protect, adminOnly } from "../middleware/auth.js";
 import validateObjectId from "../middleware/validateId.js";
-import {
-  validateEmail,
-  validatePassword,
-  handleValidationErrors,
-} from "../middleware/validation.js";
-import { attachCSRFToken } from "../middleware/csrf.js";
 
 const router = express.Router();
 
@@ -37,33 +31,10 @@ const authLimiter = rateLimit({
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
 });
 
-router.post(
-  "/register",
-  authLimiter,
-  validateEmail,
-  validatePassword,
-  handleValidationErrors,
-  register,
-);
-router.post(
-  "/login",
-  authLimiter,
-  validateEmail,
-  validatePassword,
-  handleValidationErrors,
-  login,
-);
+router.post("/register", authLimiter, register);
+router.post("/login", authLimiter, login);
 router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
-
-// Get CSRF token after login
-router.get("/csrf-token", protect, attachCSRFToken, (req, res) => {
-  res.json({
-    success: true,
-    csrfToken: res.getHeader("X-CSRF-Token"),
-  });
-});
-
 router.get("/users", protect, adminOnly, getAllUsers);
 router.delete("/users/:id", protect, adminOnly, validateObjectId, deleteUser);
 

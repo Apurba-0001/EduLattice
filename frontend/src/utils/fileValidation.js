@@ -54,7 +54,81 @@ export const validateFileType = (file) => {
 };
 
 // Helper function to check for dangerous file types (security)
-export const isDangerousFile = (filename) => {
+export const isDangerousFile = (filename, mimeType = "") => {
+  // Comprehensive blocklist matching backend
+  const blockedExtensions =
+    /exe|com|bat|cmd|scr|vbs|js|py|rb|pl|php|asp|aspx|jsp|sh|bash|zsh|csh|swift|jar|class|pyc|pyo|app|msi|sys|dll|ini|inf|lnk|pif|reg|mdb|db|sqlite|iso|dmg|img|bin|tmp|bak|old|zip|rar|7z|tar|gz|bz2|xz|arj|cab|ace|lzh|ace|uc2|uue|gzip|compress|shar|rpm|deb|apk|pkg|dmg|run|install|mac|exe|scr|ani|cur|ico|drv|fon|fot|ime|lcn|lnk|msi|msp|mst|ocx|scf|shb|shs|sys|tlb|tsp|vbx|ws|wsc|wsf|wsz|xnl|hta|htm|html|xml|xsl|xslt|mpeg|mpg|avi|mov|asf|asx|wmv|wma|mid|midi|wav|au|aiff|flac|m4a|m4v|mp3|mp4|mkv|webm|ogv|3gp|3g2|f4v|f4a|f4b|flv|ts|m2ts|mts|vob|docm|xlsm|pptm/i;
+
+  const blockedMimeTypes = [
+    "application/x-msdownload",
+    "application/x-msdos-program",
+    "application/x-executable",
+    "application/x-elf",
+    "application/x-object",
+    "application/x-sharedlib",
+    "application/x-sh",
+    "application/x-shellscript",
+    "application/x-bash",
+    "application/x-python",
+    "application/x-perl",
+    "application/x-ruby",
+    "application/x-java-applet",
+    "application/java-archive",
+    "application/x-java-bean",
+    "application/x-compressed",
+    "application/x-gzip",
+    "application/gzip",
+    "application/x-tar",
+    "application/x-rar-compressed",
+    "application/x-7z-compressed",
+    "application/x-zip-compressed",
+    "application/zip",
+    "application/x-ole-storage",
+    "application/vnd.ms-cab-compressed",
+    "application/x-apple-diskimage",
+    "application/x-iso9660-image",
+    "application/x-dvi",
+    "application/x-tex",
+    "application/x-latex",
+    "text/x-shellscript",
+    "text/x-python",
+    "text/javascript",
+    "text/x-script.python",
+  ];
+
+  const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+  const mimeTypeLower = mimeType.toLowerCase();
+
+  // Check blocked MIME types
+  if (blockedMimeTypes.includes(mimeTypeLower)) {
+    return `File MIME type '${mimeType}' is blocked for security reasons`;
+  }
+
+  // Check blocked extensions
+  if (blockedExtensions.test(ext.replace(".", ""))) {
+    return `File type '${ext}' is blocked for security reasons. Executable, script, archive, and system files are not allowed`;
+  }
+
+  // Check video and audio MIME types
+  if (mimeTypeLower.startsWith("video/")) {
+    return "Video files are not allowed";
+  }
+  if (mimeTypeLower.startsWith("audio/")) {
+    return "Audio files are not allowed";
+  }
+
+  // Check for double extensions (e.g., image.jpg.exe)
+  const parts = filename.split(".");
+  if (parts.length > 2) {
+    for (let i = 0; i < parts.length - 1; i++) {
+      const checkExt = parts[i + 1].toLowerCase();
+      if (blockedExtensions.test(checkExt)) {
+        return `File with suspicious double extension (.${checkExt}) detected - possible malware disguised as legitimate file`;
+      }
+    }
+  }
+
+  // Additional legacy checks
   const dangerousExtensions = {
     // Windows executables
     ".exe": "Windows executable",
@@ -116,24 +190,8 @@ export const isDangerousFile = (filename) => {
     ".pptm": "PowerPoint with macros (potential risk)",
   };
 
-  const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
   if (dangerousExtensions[ext]) {
     return dangerousExtensions[ext];
-  }
-
-  // Check for double extensions (e.g., image.jpg.exe)
-  const parts = filename.split(".");
-  if (parts.length > 2) {
-    for (let i = 0; i < parts.length - 1; i++) {
-      const checkExt = "." + parts[i + 1];
-      if (dangerousExtensions[checkExt.toLowerCase()]) {
-        return (
-          "File with suspicious double extension (" +
-          checkExt +
-          ") - may be disguised malware"
-        );
-      }
-    }
   }
 
   return null;
@@ -145,9 +203,9 @@ export const isDangerousFile = (filename) => {
  * @returns {Object} - { isValid: boolean, error: string|null }
  */
 export const validateFiles = (filesArray) => {
-  // SECURITY: Check for dangerous files
+  // SECURITY: Check for dangerous files (including MIME type validation)
   for (let file of filesArray) {
-    const dangerReason = isDangerousFile(file.name);
+    const dangerReason = isDangerousFile(file.name, file.type);
     if (dangerReason) {
       return {
         isValid: false,

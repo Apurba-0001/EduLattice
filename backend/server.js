@@ -25,9 +25,6 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import compression from "compression";
-import xssClean from "xss-clean";
-import hpp from "hpp";
-import rateLimit from "express-rate-limit";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
@@ -45,61 +42,14 @@ connectDB();
 
 // 1. Helmet for security headers
 app.use(helmet());
-
-// Enhanced Content Security Policy (CSP) - Strict restrictions
-const cspDirectives = {
-  // Restrict all content to same origin by default
-  defaultSrc: ["'self'"],
-
-  // Only allow scripts from same origin
-  scriptSrc: ["'self'"],
-
-  // Allow styles from same origin and unsafe-inline (for Tailwind CSS)
-  styleSrc: ["'self'", "'unsafe-inline'"],
-
-  // Allow images from self, data URLs, and HTTPS
-  imgSrc: ["'self'", "data:", "https:", "https://res.cloudinary.com"],
-
-  // Allow fonts from self
-  fontSrc: ["'self'"],
-
-  // Only allow connections to same origin and Cloudinary API
-  connectSrc: ["'self'", "https://api.cloudinary.com"],
-
-  // Allow media from self and Cloudinary
-  mediaSrc: ["'self'", "https://res.cloudinary.com"],
-
-  // Disable plugins
-  objectSrc: ["'none'"],
-
-  // Disable frames (no embedded content)
-  frameSrc: ["'none'"],
-
-  // Restrict base URL
-  baseUri: ["'self'"],
-
-  // Restrict form submissions to same origin
-  formAction: ["'self'"],
-
-  // Prevent framing of this site
-  frameAncestors: ["'none'"],
-
-  // Strict yet flexible configuration
-  childSrc: ["'self'"],
-  prefetchSrc: ["'self'"],
-  workerSrc: ["'self'"],
-};
-
-// Only add reportUri in production
-if (process.env.NODE_ENV === "production") {
-  cspDirectives.reportUri = "/api/csp-report";
-}
-
 app.use(
   helmet.contentSecurityPolicy({
-    directives: cspDirectives,
-    // Report violations but don't block (for testing)
-    reportOnly: process.env.NODE_ENV === "development",
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
   }),
 );
 
@@ -143,52 +93,6 @@ app.use(
   }),
 );
 
-// 3a. XSS Clean - Remove malicious HTML scripts
-app.use(xssClean());
-
-// 3b. HPP - Prevent HTTP Parameter Pollution
-app.use(hpp());
-
-// 3c. Additional Security Headers Middleware
-app.use((req, res, next) => {
-  // Strict-Transport-Security - Force HTTPS (only in production, 1 year)
-  if (process.env.NODE_ENV === "production") {
-    res.setHeader(
-      "Strict-Transport-Security",
-      "max-age=31536000; includeSubDomains; preload",
-    );
-  }
-
-  // Referrer-Policy - Control what referrer info is sent
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-
-  // Permissions-Policy - Restrict browser features
-  res.setHeader(
-    "Permissions-Policy",
-    [
-      "geolocation=()",
-      "microphone=()",
-      "camera=()",
-      "payment=()",
-      "usb=()",
-      "magnetometer=()",
-      "gyroscope=()",
-      "accelerometer=()",
-    ].join(", "),
-  );
-
-  // Remove server header to avoid disclosing technology
-  res.removeHeader("X-Powered-By");
-
-  // Additional XSS protection
-  res.setHeader("X-XSS-Protection", "1; mode=block");
-
-  // Prevent MIME type sniffing
-  res.setHeader("X-Content-Type-Options", "nosniff");
-
-  next();
-});
-
 // 4. Cookie parser for secure token handling
 app.use(cookieParser());
 
@@ -211,45 +115,6 @@ app.use(
     },
   }),
 );
-
-// ========== RATE LIMITING ==========
-// Global rate limiter - applies to all routes
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
-  message: {
-    success: false,
-    message: "Too many requests. Please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === "/api/health" || req.path === "/";
-  },
-});
-
-// Apply global rate limiter to all requests (except excluded)
-app.use(globalLimiter);
-
-// Stricter rate limiter for file uploads
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // 20 uploads per hour
-  keyGenerator: (req) => {
-    // Rate limit by user ID if authenticated, otherwise by IP
-    return req.user?._id?.toString() || req.ip;
-  },
-  message: {
-    success: false,
-    message: "Too many uploads. Please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Store limiters for use in routes
-app.locals.uploadLimiter = uploadLimiter;
 
 // ========== ROUTES ==========
 app.use("/api/auth", authRoutes);
@@ -298,31 +163,7 @@ app.use((err, req, res, next) => {
     );
   }
 
-  // Validation errors (from express-validator)
-  if (err.name === "ValidationError" || err.status === 400) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid input provided",
-    });
-  }
-
-  // JWT authentication errors
-  if (err.name === "JsonWebTokenError") {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid authentication token",
-    });
-  }
-
-  // Token expired
-  if (err.name === "TokenExpiredError") {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication token expired",
-    });
-  }
-
-  // Multer file size errors
+  // Multer errors
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({
       success: false,
@@ -330,19 +171,11 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Multer file type errors
   if (err.message && err.message.includes("Invalid file type")) {
     return res.status(400).json({
       success: false,
-      message: "Invalid file type. Only documents and images are allowed.",
-    });
-  }
-
-  // File upload errors
-  if (err.code === "LIMIT_FILE_COUNT") {
-    return res.status(400).json({
-      success: false,
-      message: "Too many files uploaded",
+      message:
+        "Invalid file type. Only PDF, PPT, DOCX, XLS, JPG, and PNG are allowed.",
     });
   }
 
@@ -350,28 +183,14 @@ app.use((err, req, res, next) => {
   if (err.code === "EBADCSRFTOKEN") {
     return res.status(403).json({
       success: false,
-      message: "Security verification failed",
+      message: "Invalid security token. Please try again.",
     });
   }
 
-  // Database errors
-  if (err.name === "MongooseError" || err.code === 11000) {
-    return res.status(400).json({
-      success: false,
-      message: "Database error. Please try again.",
-    });
-  }
-
-  // Default error - never expose internal error messages
-  const statusCode = err.statusCode || err.status || 500;
-  const isDevelopment = process.env.NODE_ENV === "development";
-  const message = isDevelopment
-    ? err.message
-    : "An error occurred. Please try again.";
-
-  res.status(statusCode).json({
+  // Never expose internal error messages to clients
+  res.status(err.status || 500).json({
     success: false,
-    message,
+    message: "An error occurred. Please try again.",
   });
 });
 

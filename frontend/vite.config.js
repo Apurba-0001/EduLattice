@@ -8,9 +8,10 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: process.env.VITE_PROXY_TARGET || "http://localhost:5000",
         changeOrigin: true,
         rewrite: (path) => path,
+        ws: true, // Enable WebSocket support if needed
       },
     },
     cors: true,

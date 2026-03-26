@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { SEMESTERS, getSubjectsBySemester } from "../constants/curriculum";
@@ -24,29 +24,6 @@ const Upload = () => {
   const fileInputRef = useRef(null);
 
   const navigate = useNavigate();
-
-  // Reusable function to fetch fresh CSRF token
-  const refreshCSRFToken = async () => {
-    try {
-      const response = await api.get("/auth/csrf-token");
-      if (response.data.csrfToken) {
-        localStorage.setItem("csrfToken", response.data.csrfToken);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to fetch CSRF token:", error);
-      }
-      // Non-blocking: CSRF token will be sent from api.js interceptor if available
-      return false;
-    }
-  };
-
-  // Fetch CSRF token on component mount for file upload protection
-  useEffect(() => {
-    refreshCSRFToken();
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -151,9 +128,6 @@ const Upload = () => {
     setSuccess("");
 
     try {
-      // Refresh CSRF token before upload to ensure it's valid and fresh
-      await refreshCSRFToken();
-
       const uploadData = new FormData();
 
       // Append all files
