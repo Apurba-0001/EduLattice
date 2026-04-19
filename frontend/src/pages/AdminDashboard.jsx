@@ -6,6 +6,7 @@ import ResourceTable from "../components/ResourceTable";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 const RESOURCES_PER_PAGE = 10;
+const USERS_PER_PAGE = 10;
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -17,6 +18,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [resourcePage, setResourcePage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
   const [mobileUserPopup, setMobileUserPopup] = useState(null);
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
@@ -34,6 +36,8 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === "resources") {
       setResourcePage(1);
+    } else if (activeTab === "users") {
+      setUserPage(1);
     }
   }, [activeTab]);
 
@@ -128,34 +132,50 @@ const AdminDashboard = () => {
     groupedResources.length,
   );
 
-  const getVisiblePageNumbers = () => {
-    if (totalResourcePages <= 5) {
-      return Array.from(
-        { length: totalResourcePages },
-        (_, index) => index + 1,
-      );
+  const totalUserPages = Math.max(1, Math.ceil(users.length / USERS_PER_PAGE));
+
+  useEffect(() => {
+    if (activeTab !== "users") return;
+
+    if (userPage > totalUserPages) {
+      setUserPage(totalUserPages);
+    }
+  }, [activeTab, userPage, totalUserPages]);
+
+  const paginatedUsers = users.slice(
+    (userPage - 1) * USERS_PER_PAGE,
+    userPage * USERS_PER_PAGE,
+  );
+
+  const userStartIndex =
+    users.length === 0 ? 0 : (userPage - 1) * USERS_PER_PAGE + 1;
+  const userEndIndex = Math.min(userPage * USERS_PER_PAGE, users.length);
+
+  const getVisiblePageNumbers = (currentPage, totalPages) => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
     }
 
-    if (resourcePage <= 3) {
+    if (currentPage <= 3) {
       return [1, 2, 3, 4, 5];
     }
 
-    if (resourcePage >= totalResourcePages - 2) {
+    if (currentPage >= totalPages - 2) {
       return [
-        totalResourcePages - 4,
-        totalResourcePages - 3,
-        totalResourcePages - 2,
-        totalResourcePages - 1,
-        totalResourcePages,
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
       ];
     }
 
     return [
-      resourcePage - 2,
-      resourcePage - 1,
-      resourcePage,
-      resourcePage + 1,
-      resourcePage + 2,
+      currentPage - 2,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2,
     ];
   };
 
@@ -473,7 +493,10 @@ const AdminDashboard = () => {
                             </button>
 
                             <div className="hidden md:flex items-center gap-1">
-                              {getVisiblePageNumbers().map((pageNum) => (
+                              {getVisiblePageNumbers(
+                                resourcePage,
+                                totalResourcePages,
+                              ).map((pageNum) => (
                                 <button
                                   key={pageNum}
                                   type="button"
@@ -525,91 +548,162 @@ const AdminDashboard = () => {
                     <p className="text-slate-400 text-lg">No users found</p>
                   </div>
                 ) : (
-                  <div className="rounded-xl">
-                    <table className="w-full">
-                      <thead>
-                        <tr
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                          }}
-                        >
-                          <th className="px-3 sm:px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider rounded-tl-xl">
-                            Name
-                          </th>
-                          <th className="hidden sm:table-cell px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Email
-                          </th>
-                          <th className="px-3 sm:px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider sm:rounded-none rounded-tr-xl">
-                            Role
-                          </th>
-                          <th className="hidden sm:table-cell px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Joined
-                          </th>
-                          <th className="hidden sm:table-cell px-5 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider rounded-tr-xl">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {users.map((u) => (
+                  <>
+                    <div className="rounded-xl">
+                      <table className="w-full">
+                        <thead>
                           <tr
-                            key={u._id}
-                            className="hover:bg-slate-100 transition-colors duration-150 cursor-pointer sm:cursor-default"
-                            onClick={() => {
-                              if (window.innerWidth < 640) {
-                                setMobileUserPopup(u);
-                              }
+                            style={{
+                              background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
                             }}
                           >
-                            <td className="px-3 sm:px-5 py-4">
-                              <div className="text-sm font-medium text-slate-700 truncate">
-                                {u.name}
-                              </div>
-                              <div className="sm:hidden text-xs text-slate-500 mt-0.5 truncate">
-                                {u.email}
-                              </div>
-                            </td>
-                            <td className="hidden sm:table-cell px-5 py-4 text-sm text-slate-500">
-                              {u.email}
-                            </td>
-                            <td className="px-3 sm:px-5 py-4">
-                              <span
-                                className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
-                                style={{
-                                  background: u.isAdmin
-                                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                                    : "linear-gradient(135deg, #10b981, #059669)",
-                                }}
-                              >
-                                {u.isAdmin ? "Admin" : "Student"}
-                              </span>
-                            </td>
-                            <td className="hidden sm:table-cell px-5 py-4 text-sm text-slate-500">
-                              {new Date(u.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="hidden sm:table-cell px-5 py-4 text-center">
-                              {u.isAdmin ? (
-                                <span className="text-slate-400 text-sm italic">
-                                  Protected
-                                </span>
-                              ) : (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteUser(u._id, u.isAdmin);
-                                  }}
-                                  className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors whitespace-nowrap"
-                                >
-                                  Remove
-                                </button>
-                              )}
-                            </td>
+                            <th className="px-3 sm:px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider rounded-tl-xl">
+                              Name
+                            </th>
+                            <th className="hidden sm:table-cell px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                              Email
+                            </th>
+                            <th className="px-3 sm:px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider sm:rounded-none rounded-tr-xl">
+                              Role
+                            </th>
+                            <th className="hidden sm:table-cell px-5 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                              Joined
+                            </th>
+                            <th className="hidden sm:table-cell px-5 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider rounded-tr-xl">
+                              Actions
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {paginatedUsers.map((u) => (
+                            <tr
+                              key={u._id}
+                              className="hover:bg-slate-100 transition-colors duration-150 cursor-pointer sm:cursor-default"
+                              onClick={() => {
+                                if (window.innerWidth < 640) {
+                                  setMobileUserPopup(u);
+                                }
+                              }}
+                            >
+                              <td className="px-3 sm:px-5 py-4">
+                                <div className="text-sm font-medium text-slate-700 truncate">
+                                  {u.name}
+                                </div>
+                                <div className="sm:hidden text-xs text-slate-500 mt-0.5 truncate">
+                                  {u.email}
+                                </div>
+                              </td>
+                              <td className="hidden sm:table-cell px-5 py-4 text-sm text-slate-500">
+                                {u.email}
+                              </td>
+                              <td className="px-3 sm:px-5 py-4">
+                                <span
+                                  className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
+                                  style={{
+                                    background: u.isAdmin
+                                      ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                                      : "linear-gradient(135deg, #10b981, #059669)",
+                                  }}
+                                >
+                                  {u.isAdmin ? "Admin" : "Student"}
+                                </span>
+                              </td>
+                              <td className="hidden sm:table-cell px-5 py-4 text-sm text-slate-500">
+                                {new Date(u.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="hidden sm:table-cell px-5 py-4 text-center">
+                                {u.isAdmin ? (
+                                  <span className="text-slate-400 text-sm italic">
+                                    Protected
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteUser(u._id, u.isAdmin);
+                                    }}
+                                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors whitespace-nowrap"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {totalUserPages > 1 && (
+                      <div className="mt-6 pt-4 border-t border-slate-300/40 space-y-3">
+                        <div className="text-xs sm:text-sm text-slate-500 font-medium text-center sm:text-left">
+                          Showing {userStartIndex}-{userEndIndex} of{" "}
+                          {users.length} users
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="text-xs sm:text-sm font-semibold text-slate-600 text-center sm:text-left">
+                            Page {userPage} of {totalUserPages}
+                          </div>
+
+                          <div className="flex items-center justify-center sm:justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setUserPage((prev) => Math.max(1, prev - 1))
+                              }
+                              disabled={userPage === 1}
+                              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                                userPage === 1
+                                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                  : "neu-btn text-slate-600"
+                              }`}
+                            >
+                              Prev
+                            </button>
+
+                            <div className="hidden md:flex items-center gap-1">
+                              {getVisiblePageNumbers(
+                                userPage,
+                                totalUserPages,
+                              ).map((pageNum) => (
+                                <button
+                                  key={pageNum}
+                                  type="button"
+                                  onClick={() => setUserPage(pageNum)}
+                                  className={`min-w-[34px] h-8 px-2 rounded-lg text-xs font-semibold transition-colors ${
+                                    userPage === pageNum
+                                      ? "neu-btn-primary"
+                                      : "neu-btn text-slate-600"
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              ))}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setUserPage((prev) =>
+                                  Math.min(totalUserPages, prev + 1),
+                                )
+                              }
+                              disabled={userPage === totalUserPages}
+                              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                                userPage === totalUserPages
+                                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                  : "neu-btn text-slate-600"
+                              }`}
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
