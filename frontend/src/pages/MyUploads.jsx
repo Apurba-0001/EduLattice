@@ -98,14 +98,8 @@ const MyUploads = () => {
 
       // If it's a grouped image, delete the entire group
       if (resource.imageGroupId) {
-        const groupResources = allResources.filter(
-          (r) => r.imageGroupId === resource.imageGroupId,
-        );
-
-        // Delete all resources in the group concurrently
-        await Promise.all(
-          groupResources.map((res) => api.delete(`/resources/${res._id}`)),
-        );
+        // Backend delete endpoint removes the full group in one request
+        await api.delete(`/resources/${deleteModal.resourceId}`);
 
         // Update local state immediately after successful deletion
         const newAllResources = allResources.filter(

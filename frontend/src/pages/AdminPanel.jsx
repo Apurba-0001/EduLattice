@@ -76,8 +76,24 @@ const AdminPanel = () => {
       setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
 
       if (deleteModal.type === "resource") {
+        const resourceToDelete = resources.find(
+          (r) => r._id === deleteModal.resourceId,
+        );
+
         await api.delete(`/resources/${deleteModal.resourceId}`);
-        setResources(resources.filter((r) => r._id !== deleteModal.resourceId));
+
+        // Backend delete endpoint removes full group when imageGroupId exists
+        if (resourceToDelete?.imageGroupId) {
+          setResources(
+            resources.filter(
+              (r) => r.imageGroupId !== resourceToDelete.imageGroupId,
+            ),
+          );
+        } else {
+          setResources(
+            resources.filter((r) => r._id !== deleteModal.resourceId),
+          );
+        }
       } else if (deleteModal.type === "user") {
         await api.delete(`/auth/users/${deleteModal.resourceId}`);
         setUsers(users.filter((u) => u._id !== deleteModal.resourceId));

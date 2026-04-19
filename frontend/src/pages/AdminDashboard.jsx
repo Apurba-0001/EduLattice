@@ -93,14 +93,8 @@ const AdminDashboard = () => {
 
       // If grouped, delete all resources with same imageGroupId
       if (resourceToDelete?.imageGroupId) {
-        const groupIds = resources
-          .filter((r) => r.imageGroupId === resourceToDelete.imageGroupId)
-          .map((r) => r._id);
-
-        // Delete all resources in the group
-        for (const groupId of groupIds) {
-          await api.delete(`/resources/${groupId}`);
-        }
+        // Backend delete endpoint removes the full group in one request
+        await api.delete(`/resources/${deleteModal.id}`);
 
         // Remove all grouped resources from state
         setResources(

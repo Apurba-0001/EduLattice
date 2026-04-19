@@ -99,16 +99,19 @@ const getDangerousFileReason = (mimetype, filename) => {
     return mimeTypeDescriptions[mimetype];
   }
 
-  // Check for double extensions (e.g., image.jpg.exe)
-  if (filename.lastIndexOf(".") !== filename.indexOf(".")) {
-    const doubleExt = filename.substring(filename.lastIndexOf(".") - 4);
-    for (const [dangerous, description] of Object.entries(
-      extensionDescriptions,
-    )) {
-      if (doubleExt.includes(dangerous)) {
+  // Check for double extensions (e.g., image.jpg.exe, ok.exe.pdf)
+  const filenameParts = filename
+    .split(".")
+    .map((part) => part.trim().toLowerCase())
+    .filter((part) => part.length > 0);
+
+  if (filenameParts.length > 2) {
+    for (let i = 1; i < filenameParts.length - 1; i++) {
+      const dangerousExt = `.${filenameParts[i].replace(/^\.+/, "")}`;
+      if (extensionDescriptions[dangerousExt]) {
         return (
           "File with suspicious double extension (" +
-          dangerous +
+          dangerousExt +
           ") - may be disguised malware"
         );
       }
@@ -165,7 +168,11 @@ const getFileType = (mimetype, filename) => {
     return "doc";
   if (ext === ".numbers" || mimetype === "application/vnd.apple.numbers")
     return "excel";
-  if (ext === ".keynote" || mimetype === "application/vnd.apple.keynote")
+  if (
+    ext === ".key" ||
+    ext === ".keynote" ||
+    mimetype === "application/vnd.apple.keynote"
+  )
     return "ppt";
 
   // Images
@@ -585,13 +592,16 @@ export const updateResource = async (req, res) => {
     }
 
     const userId = req.user._id.toString();
-    const uploadedBy = resource.uploadedBy._id
-      ? resource.uploadedBy._id.toString()
-      : resource.uploadedBy.toString();
+    const uploadedBy =
+      resource.uploadedBy && resource.uploadedBy._id
+        ? resource.uploadedBy._id.toString()
+        : resource.uploadedBy
+          ? resource.uploadedBy.toString()
+          : null;
     const isAdmin = req.user.isAdmin === true;
 
     // SECURITY: Explicit authorization check (defense in depth)
-    if (!isAdmin && userId !== uploadedBy) {
+    if (!isAdmin && (!uploadedBy || userId !== uploadedBy)) {
       if (process.env.NODE_ENV === "development") {
         console.log(`❌ Unauthorized update attempt`);
       }
@@ -634,7 +644,7 @@ export const updateResource = async (req, res) => {
 
     if (process.env.NODE_ENV === "development") {
       console.log(
-        `✅ Resource updated by ${isAdmin && userId !== uploadedBy ? "Admin" : "Owner"}: Fields=${Object.keys(updates).join(", ")}`,
+        `✅ Resource updated by ${isAdmin && (!uploadedBy || userId !== uploadedBy) ? "Admin" : "Owner"}: Fields=${Object.keys(updates).join(", ")}`,
       );
     }
 
@@ -670,9 +680,12 @@ export const deleteResource = async (req, res) => {
 
     const userId = req.user._id.toString();
     // Handle both populated and non-populated uploadedBy
-    const uploadedBy = resource.uploadedBy._id
-      ? resource.uploadedBy._id.toString()
-      : resource.uploadedBy.toString();
+    const uploadedBy =
+      resource.uploadedBy && resource.uploadedBy._id
+        ? resource.uploadedBy._id.toString()
+        : resource.uploadedBy
+          ? resource.uploadedBy.toString()
+          : null;
     const isAdmin = req.user.isAdmin === true;
 
     // Log deletion attempt (dev only)
@@ -683,7 +696,7 @@ export const deleteResource = async (req, res) => {
     }
 
     // SECURITY: Explicit authorization check (defense in depth)
-    if (!isAdmin && userId !== uploadedBy) {
+    if (!isAdmin && (!uploadedBy || userId !== uploadedBy)) {
       if (process.env.NODE_ENV === "development") {
         console.log(`❌ Unauthorized deletion attempt`);
       }
@@ -782,7 +795,8 @@ export const deleteResource = async (req, res) => {
     }
 
     // Log summary
-    const deletedBy = isAdmin && userId !== uploadedBy ? "Admin" : "Owner";
+    const deletedBy =
+      isAdmin && (!uploadedBy || userId !== uploadedBy) ? "Admin" : "Owner";
     if (process.env.NODE_ENV === "development") {
       console.log(
         `✅ ${resourcesToDelete.length} resource(s) deleted by ${deletedBy}`,

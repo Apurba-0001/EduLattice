@@ -87,10 +87,7 @@ export const adminOnly = (req, res, next) => {
 export const authorizeResourceAccess = async (req, res, next) => {
   try {
     const Resource = (await import("../models/Resource.js")).default;
-    const resource = await Resource.findById(req.params.id).populate(
-      "uploadedBy",
-      "_id name email isAdmin",
-    );
+    const resource = await Resource.findById(req.params.id);
 
     if (!resource) {
       return res.status(404).json({
@@ -107,12 +104,25 @@ export const authorizeResourceAccess = async (req, res, next) => {
       });
     }
 
-    const userId = req.user._id.toString();
-    // Handle both populated and non-populated uploadedBy
-    const uploadedById = resource.uploadedBy._id
-      ? resource.uploadedBy._id.toString()
-      : resource.uploadedBy.toString();
     const isAdmin = req.user.isAdmin === true;
+    const userId = req.user._id.toString();
+    const uploadedById = resource.uploadedBy
+      ? resource.uploadedBy.toString()
+      : null;
+
+    // Handle orphaned resources where uploader reference is missing
+    if (!uploadedById) {
+      if (isAdmin) {
+        req.resource = resource;
+        return next();
+      }
+
+      return res.status(403).json({
+        success: false,
+        message:
+          "Resource owner information is missing. Please contact an admin.",
+      });
+    }
 
     // Allow if user is admin or the uploader
     if (isAdmin || uploadedById === userId) {
@@ -122,7 +132,7 @@ export const authorizeResourceAccess = async (req, res, next) => {
         );
       }
       req.resource = resource;
-      next();
+      return next();
     } else {
       if (process.env.NODE_ENV === "development") {
         console.log(`❌ Authorization denied: Action=${req.method}`);

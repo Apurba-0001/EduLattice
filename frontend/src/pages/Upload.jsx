@@ -364,7 +364,7 @@ const Upload = () => {
                   ref={fileInputRef}
                   type="file"
                   onChange={handleFileChange}
-                  accept=".pdf,.ppt,.pptx,.odp,.keynote,.doc,.docx,.odt,.txt,.rtf,.pages,.xls,.xlsx,.ods,.csv,.numbers,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.tif,.svg,.heic,.heif,.avif"
+                  accept=".pdf,.ppt,.pptx,.odp,.key,.keynote,.doc,.docx,.odt,.txt,.rtf,.pages,.xls,.xlsx,.ods,.csv,.numbers,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.tif,.svg,.heic,.heif,.avif"
                   multiple
                   className="hidden"
                 />

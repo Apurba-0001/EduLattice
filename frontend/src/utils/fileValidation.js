@@ -5,6 +5,71 @@ import {
 } from "../constants/uploadLimits";
 import { ERROR_MESSAGES } from "../constants/errorMessages";
 
+const ALLOWED_DOC_EXTENSIONS = new Set([
+  "pdf",
+  "ppt",
+  "pptx",
+  "odp",
+  "key",
+  "keynote",
+  "doc",
+  "docx",
+  "odt",
+  "txt",
+  "rtf",
+  "pages",
+  "xls",
+  "xlsx",
+  "ods",
+  "csv",
+  "numbers",
+]);
+
+const ALLOWED_IMAGE_EXTENSIONS = new Set([
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "bmp",
+  "tiff",
+  "tif",
+  "svg",
+  "heic",
+  "heif",
+  "avif",
+]);
+
+const ALLOWED_DOC_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.oasis.opendocument.presentation",
+  "application/vnd.apple.keynote",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.apple.pages",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/x-excel",
+  "application/x-msexcel",
+  "application/x-ole-storage",
+  "application/vnd.oasis.opendocument.spreadsheet",
+  "application/vnd.apple.numbers",
+  "text/csv",
+  "text/plain",
+  "application/rtf",
+  "text/rtf",
+  "application/octet-stream",
+]);
+
+const getFileExtension = (filename = "") => {
+  const dotIndex = filename.lastIndexOf(".");
+  if (dotIndex === -1) return "";
+  return filename.substring(dotIndex + 1).toLowerCase();
+};
+
 // Helper function to determine if file is image
 export const isImageFile = (file) => {
   return file.type.startsWith("image/");
@@ -12,52 +77,25 @@ export const isImageFile = (file) => {
 
 // Helper function to validate file type
 export const validateFileType = (file) => {
-  const allowedTypes = [
-    // PDF
-    "application/pdf",
-    // PowerPoint
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.oasis.opendocument.presentation",
-    "application/vnd.apple.keynote",
-    // Word
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.oasis.opendocument.text",
-    "application/vnd.apple.pages",
-    "text/plain",
-    "application/rtf",
-    // Excel
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/x-excel",
-    "application/x-msexcel",
-    "application/vnd.oasis.opendocument.spreadsheet",
-    "application/vnd.apple.numbers",
-    "text/csv",
-    // Images - Common formats
-    "image/jpeg",
-    "image/png",
-    "image/jpg",
-    "image/gif",
-    "image/webp",
-    "image/bmp",
-    "image/tiff",
-    "image/x-tiff",
-    "image/svg+xml",
-    // Images - Modern formats
-    "image/heic",
-    "image/heif",
-    "image/avif",
-  ];
-  return allowedTypes.includes(file.type);
+  const ext = getFileExtension(file.name);
+  const mime = (file.type || "").toLowerCase();
+
+  if (ALLOWED_DOC_EXTENSIONS.has(ext)) {
+    return ALLOWED_DOC_MIME_TYPES.has(mime);
+  }
+
+  if (ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+    return mime.startsWith("image/") || mime === "application/octet-stream";
+  }
+
+  return false;
 };
 
 // Helper function to check for dangerous file types (security)
 export const isDangerousFile = (filename, mimeType = "") => {
   // Comprehensive blocklist matching backend
   const blockedExtensions =
-    /exe|com|bat|cmd|scr|vbs|js|py|rb|pl|php|asp|aspx|jsp|sh|bash|zsh|csh|swift|jar|class|pyc|pyo|app|msi|sys|dll|ini|inf|lnk|pif|reg|mdb|db|sqlite|iso|dmg|img|bin|tmp|bak|old|zip|rar|7z|tar|gz|bz2|xz|arj|cab|ace|lzh|ace|uc2|uue|gzip|compress|shar|rpm|deb|apk|pkg|dmg|run|install|mac|exe|scr|ani|cur|ico|drv|fon|fot|ime|lcn|lnk|msi|msp|mst|ocx|scf|shb|shs|sys|tlb|tsp|vbx|ws|wsc|wsf|wsz|xnl|hta|htm|html|xml|xsl|xslt|mpeg|mpg|avi|mov|asf|asx|wmv|wma|mid|midi|wav|au|aiff|flac|m4a|m4v|mp3|mp4|mkv|webm|ogv|3gp|3g2|f4v|f4a|f4b|flv|ts|m2ts|mts|vob|docm|xlsm|pptm/i;
+    /^(exe|com|bat|cmd|scr|vbs|js|py|rb|pl|php|asp|aspx|jsp|sh|bash|zsh|csh|swift|jar|class|pyc|pyo|app|msi|sys|dll|ini|inf|lnk|pif|reg|mdb|db|sqlite|iso|dmg|img|bin|tmp|bak|old|zip|rar|7z|tar|gz|bz2|xz|arj|cab|ace|lzh|uc2|uue|gzip|compress|shar|rpm|deb|apk|pkg|run|install|mac|ani|cur|ico|drv|fon|fot|ime|lcn|msp|mst|ocx|scf|shb|shs|tlb|tsp|vbx|ws|wsc|wsf|wsz|xnl|hta|htm|html|xml|xsl|xslt|mpeg|mpg|avi|mov|asf|asx|wmv|wma|mid|midi|wav|au|aiff|flac|m4a|m4v|mp3|mp4|mkv|webm|ogv|3gp|3g2|f4v|f4a|f4b|flv|ts|m2ts|mts|vob|docm|xlsm|pptm)$/i;
 
   const blockedMimeTypes = [
     "application/x-msdownload",
@@ -83,7 +121,6 @@ export const isDangerousFile = (filename, mimeType = "") => {
     "application/x-7z-compressed",
     "application/x-zip-compressed",
     "application/zip",
-    "application/x-ole-storage",
     "application/vnd.ms-cab-compressed",
     "application/x-apple-diskimage",
     "application/x-iso9660-image",
@@ -117,11 +154,15 @@ export const isDangerousFile = (filename, mimeType = "") => {
     return "Audio files are not allowed";
   }
 
-  // Check for double extensions (e.g., image.jpg.exe)
-  const parts = filename.split(".");
+  // Check for double extensions (e.g., image.jpg.exe, ok.exe.pdf)
+  const parts = filename
+    .split(".")
+    .map((part) => part.trim().toLowerCase())
+    .filter((part) => part.length > 0);
+
   if (parts.length > 2) {
-    for (let i = 0; i < parts.length - 1; i++) {
-      const checkExt = parts[i + 1].toLowerCase();
+    for (let i = 1; i < parts.length - 1; i++) {
+      const checkExt = parts[i].replace(/^\.+/, "");
       if (blockedExtensions.test(checkExt)) {
         return `File with suspicious double extension (.${checkExt}) detected - possible malware disguised as legitimate file`;
       }

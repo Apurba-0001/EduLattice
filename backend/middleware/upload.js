@@ -13,7 +13,7 @@ const fileFilter = (req, file, cb) => {
   // ========== DANGEROUS FILE BLOCKLIST ==========
   // Explicitly block all executable, script, and potentially harmful file types
   const blockedExtensions =
-    /exe|com|bat|cmd|scr|vbs|js|py|rb|pl|php|asp|aspx|jsp|sh|bash|zsh|csh|swift|jar|class|pyc|pyo|app|msi|sys|dll|ini|inf|lnk|pif|reg|mdb|db|sqlite|iso|dmg|img|bin|tmp|bak|old|zip|rar|7z|tar|gz|bz2|xz|arj|cab|ace|lzh|ace|uc2|uue|gzip|compress|shar|rpm|deb|apk|pkg|dmg|run|install|mac|exe|scr|ani|cur|ico|drv|fon|fot|ime|lcn|lnk|msi|msp|mst|ocx|scf|shb|shs|sys|tlb|tsp|vbx|ws|wsc|wsf|wsz|xnl|hta|htm|html|xml|xsl|xslt|mpeg|mpg|avi|mov|asf|asx|wmv|wma|mid|midi|wav|au|aiff|flac|m4a|m4v|mp3|mp4|mkv|webm|ogv|3gp|3g2|f4v|f4a|f4b|flv|ts|m2ts|mts|vob|webp|eot|ttf|otf|woff|woff2|fon/i;
+    /^(exe|com|bat|cmd|scr|vbs|js|py|rb|pl|php|asp|aspx|jsp|sh|bash|zsh|csh|swift|jar|class|pyc|pyo|app|msi|sys|dll|ini|inf|lnk|pif|reg|mdb|db|sqlite|iso|dmg|img|bin|tmp|bak|old|zip|rar|7z|tar|gz|bz2|xz|arj|cab|ace|lzh|uc2|uue|gzip|compress|shar|rpm|deb|apk|pkg|run|install|mac|ani|cur|ico|drv|fon|fot|ime|lcn|msp|mst|ocx|scf|shb|shs|tlb|tsp|vbx|ws|wsc|wsf|wsz|xnl|hta|htm|html|xml|xsl|xslt|mpeg|mpg|avi|mov|asf|asx|wmv|wma|mid|midi|wav|au|aiff|flac|m4a|m4v|mp3|mp4|mkv|webm|ogv|3gp|3g2|f4v|f4a|f4b|flv|ts|m2ts|mts|vob|eot|ttf|otf|woff|woff2)$/i;
 
   const blockedMimeTypes = [
     "application/x-msdownload",
@@ -39,9 +39,6 @@ const fileFilter = (req, file, cb) => {
     "application/x-7z-compressed",
     "application/x-zip-compressed",
     "application/zip",
-    "application/x-ole-storage",
-    "application/x-msexcel",
-    "application/x-ole-storage",
     "application/vnd.ms-cab-compressed",
     "application/x-apple-diskimage",
     "application/x-iso9660-image",
@@ -96,12 +93,16 @@ const fileFilter = (req, file, cb) => {
     return cb(new Error("Invalid filename: path traversal detected"), false);
   }
 
-  // 6. Double extension detection (e.g., image.jpg.exe)
-  const filenameParts = file.originalname.split(".");
+  // 6. Double extension detection (e.g., image.jpg.exe, ok.exe.pdf)
+  const filenameParts = file.originalname
+    .split(".")
+    .map((part) => part.trim().toLowerCase())
+    .filter((part) => part.length > 0);
+
+  // Require at least one middle extension token between name and final extension
   if (filenameParts.length > 2) {
-    // Check if any part before the last is a dangerous extension
-    for (let i = 0; i < filenameParts.length - 1; i++) {
-      const suspiciousExt = filenameParts[i + 1];
+    for (let i = 1; i < filenameParts.length - 1; i++) {
+      const suspiciousExt = filenameParts[i].replace(/^\.+/, "");
       if (blockedExtensions.test(suspiciousExt)) {
         return cb(
           new Error(
@@ -125,9 +126,9 @@ const fileFilter = (req, file, cb) => {
 
   // ========== ALLOWED FILE WHITELIST ==========
   const allowedDocExtensions =
-    /pdf|ppt|pptx|odp|doc|docx|odt|xls|xlsx|ods|csv|txt|rtf|key|pages|numbers/i;
+    /^(pdf|ppt|pptx|odp|doc|docx|odt|xls|xlsx|ods|csv|txt|rtf|key|keynote|pages|numbers)$/i;
   const allowedImageExtensions =
-    /jpg|jpeg|png|gif|webp|bmp|tiff|tif|svg|heic|heif/i;
+    /^(jpg|jpeg|png|gif|webp|bmp|tiff|tif|svg|heic|heif|avif)$/i;
 
   // Check if it's a whitelisted document
   if (allowedDocExtensions.test(extname)) {
@@ -145,12 +146,14 @@ const fileFilter = (req, file, cb) => {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/x-excel",
       "application/x-msexcel",
+      "application/x-ole-storage",
       "application/vnd.oasis.opendocument.spreadsheet",
       "application/vnd.apple.numbers",
       "text/csv",
       "text/plain",
       "application/rtf",
       "text/rtf",
+      "application/octet-stream",
     ];
 
     if (allowedDocMimeTypes.includes(mimetype)) {
@@ -168,7 +171,7 @@ const fileFilter = (req, file, cb) => {
   // If file passes extension/MIME checks but isn't in whitelist, reject
   cb(
     new Error(
-      "Invalid file type. Allowed: PDF, PPT, PPTX, ODP, DOC, DOCX, ODT, XLS, XLSX, ODS, CSV, TXT, RTF, Keynote, Pages, Numbers, JPG, JPEG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, HEIF",
+      "Invalid file type. Allowed: PDF, PPT, PPTX, ODP, KEY/Keynote, DOC, DOCX, ODT, XLS, XLSX, ODS, CSV, TXT, RTF, Pages, Numbers, JPG, JPEG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, HEIF, AVIF",
     ),
     false,
   );

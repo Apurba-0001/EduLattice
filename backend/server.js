@@ -175,7 +175,7 @@ app.use((err, req, res, next) => {
     return res.status(400).json({
       success: false,
       message:
-        "Invalid file type. Only PDF, PPT, DOCX, XLS, JPG, and PNG are allowed.",
+        "Invalid file type. Allowed: PDF, PPT, PPTX, ODP, KEY/Keynote, DOC, DOCX, ODT, TXT, RTF, Pages, XLS, XLSX, ODS, CSV, Numbers, JPG, JPEG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, HEIF, AVIF.",
     });
   }
 
