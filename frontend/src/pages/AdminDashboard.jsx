@@ -5,6 +5,8 @@ import api from "../utils/api";
 import ResourceTable from "../components/ResourceTable";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
+const RESOURCES_PER_PAGE = 10;
+
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("stats");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [resourcePage, setResourcePage] = useState(1);
   const [mobileUserPopup, setMobileUserPopup] = useState(null);
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
@@ -28,6 +31,12 @@ const AdminDashboard = () => {
     fetchData();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === "resources") {
+      setResourcePage(1);
+    }
+  }, [activeTab]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -36,8 +45,27 @@ const AdminDashboard = () => {
         const response = await api.get("/resources/stats/overview");
         setStats(response.data.data);
       } else if (activeTab === "resources") {
-        const response = await api.get("/resources");
-        setResources(response.data.data);
+        const pageSize = 100;
+        let currentPage = 1;
+        let totalPages = 1;
+        let allResources = [];
+
+        do {
+          const response = await api.get("/resources", {
+            params: {
+              page: currentPage,
+              limit: pageSize,
+              sortBy: "createdAt",
+              sortOrder: "desc",
+            },
+          });
+
+          allResources = allResources.concat(response.data.data || []);
+          totalPages = response.data.totalPages || 1;
+          currentPage += 1;
+        } while (currentPage <= totalPages);
+
+        setResources(allResources);
       } else if (activeTab === "users") {
         const response = await api.get("/auth/users");
         setUsers(response.data.data);
@@ -70,6 +98,65 @@ const AdminDashboard = () => {
     });
 
     return grouped;
+  };
+
+  const groupedResources = groupResources(resources);
+  const totalResourcePages = Math.max(
+    1,
+    Math.ceil(groupedResources.length / RESOURCES_PER_PAGE),
+  );
+
+  useEffect(() => {
+    if (activeTab !== "resources") return;
+
+    if (resourcePage > totalResourcePages) {
+      setResourcePage(totalResourcePages);
+    }
+  }, [activeTab, resourcePage, totalResourcePages]);
+
+  const paginatedResources = groupedResources.slice(
+    (resourcePage - 1) * RESOURCES_PER_PAGE,
+    resourcePage * RESOURCES_PER_PAGE,
+  );
+
+  const resourceStartIndex =
+    groupedResources.length === 0
+      ? 0
+      : (resourcePage - 1) * RESOURCES_PER_PAGE + 1;
+  const resourceEndIndex = Math.min(
+    resourcePage * RESOURCES_PER_PAGE,
+    groupedResources.length,
+  );
+
+  const getVisiblePageNumbers = () => {
+    if (totalResourcePages <= 5) {
+      return Array.from(
+        { length: totalResourcePages },
+        (_, index) => index + 1,
+      );
+    }
+
+    if (resourcePage <= 3) {
+      return [1, 2, 3, 4, 5];
+    }
+
+    if (resourcePage >= totalResourcePages - 2) {
+      return [
+        totalResourcePages - 4,
+        totalResourcePages - 3,
+        totalResourcePages - 2,
+        totalResourcePages - 1,
+        totalResourcePages,
+      ];
+    }
+
+    return [
+      resourcePage - 2,
+      resourcePage - 1,
+      resourcePage,
+      resourcePage + 1,
+      resourcePage + 2,
+    ];
   };
 
   const handleDeleteResource = async (id) => {
@@ -343,18 +430,86 @@ const AdminDashboard = () => {
             {activeTab === "resources" && (
               <div className="neu-surface-lg rounded-2xl p-6 sm:p-8 mb-6">
                 <h2 className="text-2xl sm:text-3xl font-bold text-slate-700 mb-6">
-                  All Resources ({groupResources(resources).length})
+                  All Resources ({groupedResources.length})
                 </h2>
-                {resources.length === 0 ? (
+                {groupedResources.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-slate-400 text-lg">No resources found</p>
                   </div>
                 ) : (
-                  <ResourceTable
-                    resources={groupResources(resources)}
-                    onDelete={handleDeleteResource}
-                    showActions={true}
-                  />
+                  <>
+                    <ResourceTable
+                      resources={paginatedResources}
+                      onDelete={handleDeleteResource}
+                      showActions={true}
+                    />
+
+                    {totalResourcePages > 1 && (
+                      <div className="mt-6 pt-4 border-t border-slate-300/40 space-y-3">
+                        <div className="text-xs sm:text-sm text-slate-500 font-medium text-center sm:text-left">
+                          Showing {resourceStartIndex}-{resourceEndIndex} of{" "}
+                          {groupedResources.length} resources
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="text-xs sm:text-sm font-semibold text-slate-600 text-center sm:text-left">
+                            Page {resourcePage} of {totalResourcePages}
+                          </div>
+
+                          <div className="flex items-center justify-center sm:justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setResourcePage((prev) => Math.max(1, prev - 1))
+                              }
+                              disabled={resourcePage === 1}
+                              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                                resourcePage === 1
+                                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                  : "neu-btn text-slate-600"
+                              }`}
+                            >
+                              Prev
+                            </button>
+
+                            <div className="hidden md:flex items-center gap-1">
+                              {getVisiblePageNumbers().map((pageNum) => (
+                                <button
+                                  key={pageNum}
+                                  type="button"
+                                  onClick={() => setResourcePage(pageNum)}
+                                  className={`min-w-[34px] h-8 px-2 rounded-lg text-xs font-semibold transition-colors ${
+                                    resourcePage === pageNum
+                                      ? "neu-btn-primary"
+                                      : "neu-btn text-slate-600"
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              ))}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setResourcePage((prev) =>
+                                  Math.min(totalResourcePages, prev + 1),
+                                )
+                              }
+                              disabled={resourcePage === totalResourcePages}
+                              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                                resourcePage === totalResourcePages
+                                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                  : "neu-btn text-slate-600"
+                              }`}
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
