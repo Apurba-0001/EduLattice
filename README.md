@@ -295,13 +295,7 @@ Student Password: Student@123456
 
 ---
 
-## 📜 License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
+## 👨‍💻 Creator
 
 **Apurba Maji** - Full Stack Developer
 
@@ -311,119 +305,29 @@ _Last Updated: May 2026_
 
 **Response:**
 
-```json
-{
-  "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "data": {
-    "_id": "507f1f77bcf86cd799439011",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "isAdmin": false,
-    "createdAt": "2024-01-01T00:00:00.000Z"
-  },
-  "message": "User registered successfully"
-}
-```
-
 **Note:** `isAdmin` is always `false` on self-registration. Admin roles can only be assigned directly in the database.
 
 #### Login
 
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "Password@123"
-}
-```
-
 **Response:**
-
-```json
-{
-  "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "data": {
-    "_id": "507f1f77bcf86cd799439011",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "isAdmin": false,
-    "createdAt": "2024-01-01T00:00:00.000Z"
-  },
-  "message": "Login successful"
-}
-```
 
 **Note:** JWT token expires in 1 hour. The token includes `lastActivity` tracking for monitoring user sessions.
 
 #### Logout
 
-```http
-POST /api/auth/logout
-Authorization: Bearer <token>
-```
-
 **Response:**
-
-```json
-{
-  "success": true,
-  "message": "Logged out successfully"
-}
-```
 
 **Note:** This is a stateless logout. The client should discard the JWT token after receiving this response.
 
 #### Get Current User
 
-```http
-GET /api/auth/me
-Authorization: Bearer <token>
-```
-
 #### Get All Users (Admin)
 
-```http
-GET /api/auth/users
-Authorization: Bearer <token>
-```
-
 **Response:**
-
-```json
-{
-  "success": true,
-  "count": 15,
-  "data": [
-    {
-      "_id": "507f1f77bcf86cd799439011",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "isAdmin": false,
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    }
-  ]
-}
-```
 
 #### Delete User (Admin)
 
-```http
-DELETE /api/auth/users/:id
-Authorization: Bearer <token>
-```
-
 **Response:**
-
-```json
-{
-  "success": true,
-  "message": "User deleted successfully"
-}
-```
 
 **Note:** Admin users cannot be deleted through this endpoint. Use database administration tools to manage admin accounts.
 
@@ -431,47 +335,9 @@ Authorization: Bearer <token>
 
 #### Upload Resource (Single or Multiple)
 
-```http
-POST /api/resources
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-{
-  "file": <file(s)>,              # 1-5 files (images) or 1 file (documents)
-  "title": "Calculus Notes",
-  "description": "Chapter 1-3 comprehensive notes",
-  "subject": "Mathematics",
-  "semester": "3rd",
-  "resourceType": "Lecture Notes"
-}
-```
-
 **Response** (includes imageGroupId for grouped uploads):
 
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "_id": "507f1f77bcf86cd799439011",
-      "fileId": "550e8400-e29b-41d4-a716-446655440000",
-      "title": "Calculus Notes",
-      "fileUrl": "https://res.cloudinary.com/...",
-      "views": 0,
-      "downloads": 0,
-      "imageGroupId": "550e8400-e29b-41d4-a716-446655440001",
-      "imageGroupCount": 3
-    }
-  ]
-}
-```
-
 #### Get All Resources (with filters and sorting)
-
-```http
-GET /api/resources?subject=Mathematics&semester=3rd&keyword=calculus&sortBy=views&sortOrder=desc
-Authorization: Bearer <token>
-```
 
 **Query Parameters:**
 
@@ -487,69 +353,25 @@ Authorization: Bearer <token>
 
 #### Get Single Resource
 
-```http
-GET /api/resources/:id
-Authorization: Bearer <token>
-```
-
 #### Track Resource View
-
-```http
-POST /api/resources/:id/view
-Authorization: Bearer <token>
-```
 
 **Called automatically when user clicks "View Details"**
 
 #### Download Resource
-
-```http
-GET /api/resources/:id/download
-Authorization: Bearer <token>
-```
 
 - Increments download count automatically
 - Returns file from Cloudinary
 
 #### Download Grouped Resources
 
-```http
-GET /api/resources/:id/download-group
-Authorization: Bearer <token>
-```
-
 - Downloads all images in a group as ZIP file
 - Increments download count for each image
 
 #### Get My Uploads
 
-```http
-GET /api/resources/my/uploads?includeArchived=false
-Authorization: Bearer <token>
-```
-
 #### Update Resource (Metadata Only)
 
-```http
-PUT /api/resources/:id
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "Updated Title",
-  "description": "Updated description",
-  "subject": "Mathematics",
-  "semester": "3rd",
-  "resourceType": "Lecture Notes"
-}
-```
-
 #### Delete Resource
-
-```http
-DELETE /api/resources/:id
-Authorization: Bearer <token>
-```
 
 - Deletes from Cloudinary and database
 - If part of group, deletes all grouped resources
@@ -557,36 +379,7 @@ Authorization: Bearer <token>
 
 #### Get Statistics (Admin)
 
-```http
-GET /api/resources/stats/overview
-Authorization: Bearer <token>
-```
-
 **Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "total": 150,
-    "byType": {
-      "pdf": 60,
-      "ppt": 45,
-      "doc": 30,
-      "excel": 10,
-      "image": 5
-    },
-    "bySubject": [
-      { "_id": "Mathematics", "count": 50 },
-      { "_id": "Physics", "count": 40 }
-    ],
-    "bySemester": [
-      { "_id": "1st", "count": 45 },
-      { "_id": "2nd", "count": 50 }
-    ]
-  }
-}
-```
 
 ## 📸 Features Demonstration
 
@@ -715,50 +508,7 @@ After installation, you can:
 
 ### User Model
 
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  email: String (unique),
-  password: String (hashed with bcrypt),
-  isAdmin: Boolean (default: false, immutable after creation),
-  lastActivity: Date (tracks last login time for activity monitoring),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
 ### Resource Model
-
-```javascript
-{
-  _id: ObjectId,
-  fileId: String (UUID v4),
-  title: String (required),
-  description: String,
-  subject: String,
-  semester: String,
-  resourceType: String,
-  fileType: String (pdf, ppt, doc, excel, image),
-  fileUrl: String (Cloudinary CDN URL),
-  cloudinaryPublicId: String (for deletion),
-  fileName: String (display name for download),
-  storageFileName: String (unique Cloudinary filename),
-  fileSize: Number (in bytes),
-  uploadedBy: ObjectId (reference to User),
-  views: Number (default: 0, incremented on view),
-  downloads: Number (default: 0, incremented on download),
-
-  // For grouped images (multiple images uploaded together)
-  imageGroupId: String (UUID v4, null if not grouped),
-  imageGroupCount: Number (total images in this group),
-  imageGroupSize: Number (total size of all images in group),
-
-  isArchived: Boolean (default: false),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
 
 ### Database Indexes
 
