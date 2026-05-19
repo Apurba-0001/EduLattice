@@ -1,408 +1,313 @@
-# EduLattice - Online Learning Resource Sharing Platform
+# 📚 EduLattice
 
-A full-stack web application for sharing and managing educational resources within an academic class. Built with the MERN stack (MongoDB, Express, React, Node.js), with all files securely stored on Cloudinary for optimal performance and reliability.
+<div align="center">
 
-![EduLattice](https://img.shields.io/badge/EduLattice-v1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue)
+## Intelligent Learning Resource Sharing Platform
+
+**A production-ready MERN platform that helps students share, discover, and manage academic resources with secure uploads, analytics, and role-based access.**
+
+_Built for fast search, reliable storage, and a clean, classroom-friendly experience._
+
+</div>
+
+---
+
+<div align="center">
+
+### 🚀 Technology Stack
+
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+
+</div>
+
+---
 
 ## 🚀 Live Demo
 
 https://edulattice.onrender.com
 
-## 📋 Table of Contents
+---
 
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [Deployment](#deployment)
-- [API Documentation](#api-documentation)
-- [Features Demonstration](#-features-demonstration)
-- [Security Features](#-security-features)
-- [License](#license)
+## ✨ Key Features
 
-## ✨ Features
+### 👥 Student Features
 
-### User Management
+- 🔐 **Secure Authentication** - JWT-based login with protected routes
+- 📤 **Resource Uploads** - PDF, PPT, DOCX, XLSX, JPG, PNG with strict validation
+- 🔎 **Smart Discovery** - Search, filter, and sort by subject, semester, and type
+- 📈 **Analytics Visibility** - View and download counts per resource
+- 🗂️ **Personal Library** - My Uploads page with archive and cleanup tools
 
-- **Two-role system**: Student and Admin
-- Secure authentication with JWT tokens
-- Password hashing with bcrypt
-- Protected routes and role-based access control
-- Admin account management and user listing
+### ⚙️ Administrative Features
 
-### Resource Management
+- 📊 **Admin Dashboard** - Overview of platform activity and resource distribution
+- 👥 **User Management** - List users and manage access control
+- 🧹 **Resource Moderation** - Archive, restore, or delete resources
+- 🧾 **Audit-Friendly Actions** - Safe deletion with Cloudinary cleanup
 
-- **Upload multiple file types**: PDF, PPT, DOCX, XLSX, JPG, PNG
-- **Cloudinary storage**: All files securely stored in the cloud with automatic optimization
-- **Image grouping**: Upload up to 5 related images with a single UUID group ID (perfect for lecture notes, diagrams, etc.)
-- **File size validation**:
-  - Documents: max 25MB each
-  - Images: max 10MB each, 50MB group total
-- **Rich metadata**: Title, description, subject, semester, resource type
-- **View & download tracking**: Automatic tracking of views and downloads for analytics
-- **Security features**: Dangerous file type detection with descriptive error messages
-- **File archival**: Users and admins can archive resources instead of deleting
+### 🧠 Platform Highlights
 
-### Search & Discovery
+- ☁️ **Cloudinary Storage** - Reliable CDN-backed file hosting
+- 🖼️ **Image Grouping** - Upload up to 5 related images as a single group
+- 🛡️ **Secure Upload Pipeline** - MIME/extension checks and dangerous file blocking
+- 📱 **Responsive UI** - Optimized for mobile, tablet, and desktop
 
-- Advanced keyword search across title, description, and subject
-- Filter by subject, semester, and resource type
-- Sort by date created, most viewed, or most downloaded
-- Responsive table layout for all screen sizes
-- File type badges and visual indicators
-- Pagination support for large resource sets
+---
 
-### Admin Features
+## 📚 Technology Stack
 
-- View all resources and users with filtering
-- Delete resources with cascade deletion from Cloudinary
-- Archive/restore resources
-- Platform statistics and analytics dashboard
-- Subject and semester-wise resource distribution
-- Track total views and downloads across platform
+### 🎨 Frontend Architecture
 
-### Resource Analytics
+|                                                      Technology                                                      | Purpose                        |
+| :------------------------------------------------------------------------------------------------------------------: | :----------------------------- |
+|            ![React](https://img.shields.io/badge/React%2018-61DAFB?logo=react&logoColor=black&style=flat)            | Component-based UI             |
+|                ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white&style=flat)                | Fast dev server and build tool |
+| ![React Router](https://img.shields.io/badge/React%20Router%20v6-CA4245?logo=reactrouter&logoColor=white&style=flat) | Client-side routing            |
+|   ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=white&style=flat)    | Utility-first styling          |
+|              ![Axios](https://img.shields.io/badge/Axios-5A29E4?logo=axios&logoColor=white&style=flat)               | API communication              |
 
-- **View Tracking**: Track each time a resource is viewed
-- **Download Tracking**: Track each time a resource is downloaded
-- **Trending Resources**: Sort resources by views and downloads
-- **Per-User Analytics**: See upload counts, view counts, and download activity
+### 🔧 Backend Architecture
 
-### Security
+|                                                Technology                                                | Purpose               |
+| :------------------------------------------------------------------------------------------------------: | :-------------------- |
+|    ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=flat)     | Runtime environment   |
+|  ![Express.js](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white&style=flat)   | RESTful API framework |
+|     ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white&style=flat)      | Database              |
+|     ![Mongoose](https://img.shields.io/badge/Mongoose-800?logo=mongoose&logoColor=white&style=flat)      | ODM for MongoDB       |
+|      ![JWT](https://img.shields.io/badge/JWT-000000?logo=jsonwebtokens&logoColor=white&style=flat)       | Secure authentication |
+| ![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?logo=cloudinary&logoColor=white&style=flat) | File storage and CDN  |
 
-- JWT-based authentication with token expiration
-- Password hashing with bcrypt (10 salt rounds)
-- Input validation and sanitization on both frontend and backend
-- CORS configuration for secure cross-origin requests
-- Secure file upload handling with type validation
-- Defense against dangerous file uploads (executables, scripts, etc.)
-- Authorization middleware for protected resources
-- Environment variable management for sensitive data
-- Cloudinary API key protection with server-side uploads
+### 🚀 Deployment Infrastructure
 
-## 🛠 Tech Stack
+|                                                   Platform                                                    | Purpose                       |
+| :-----------------------------------------------------------------------------------------------------------: | :---------------------------- |
+|         ![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=white&style=flat)          | Frontend & Backend Deployment |
+| ![MongoDB Atlas](https://img.shields.io/badge/MongoDB%20Atlas-47A248?logo=mongodb&logoColor=white&style=flat) | Database Hosting              |
 
-### Backend
+---
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT + bcrypt
-- **File Upload**: Multer with in-memory buffer handling
-- **Cloud Storage**: Cloudinary SDK (documents, images, archives)
-- **UUID Generation**: uuid v4 for unique file identification
-- **Archiver**: For creating zip files of grouped resources
-- **Session Management**: Token-based JWT authentication (1-hour expiry)
+## Project Architecture
 
-### Frontend
-
-- **Framework**: React 18 with Hooks
-- **Build Tool**: Vite
-- **Routing**: React Router DOM v6
-- **HTTP Client**: Axios with interceptors
-- **Styling**: Tailwind CSS with responsive design
-- **State Management**: React Context API for authentication
-
-### Deployment
-
-- **Backend**: Render.com
-- **Frontend**: Render.com
-- **Database**: MongoDB Atlas (Cloud)
-- **File Storage**: Cloudinary CDN
-
-## 📁 Project Structure
+### Directory Structure
 
 ```
-EduLattice/
-├── backend/
-│   ├── config/
-│   │   └── db.js                 # MongoDB connection
-│   ├── controllers/
-│   │   ├── authController.js     # Authentication logic
-│   │   └── resourceController.js # Resource management with view/download tracking
-│   ├── middleware/
-│   │   ├── auth.js               # JWT verification & authorization
-│   │   └── upload.js             # Multer configuration
-│   ├── models/
-│   │   ├── User.js               # User schema
-│   │   └── Resource.js           # Resource schema with views/downloads fields
-│   ├── routes/
-│   │   ├── authRoutes.js         # Auth endpoints
-│   │   └── resourceRoutes.js     # Resource endpoints with view tracking
-│   ├── services/
-│   │   └── cloudinary.js         # Cloudinary integration
-│   ├── .env.example              # Environment variables template
-│   ├── package.json
-│   └── server.js                 # Application entry point
+edulattice/
 │
-├── frontend/
-│   ├── public/
+├── backend/                        # Express API
+│   ├── config/                     # DB configuration
+│   ├── controllers/                # Business logic
+│   ├── middleware/                 # Auth, validation, uploads
+│   ├── models/                     # Mongoose schemas
+│   ├── routes/                     # API endpoints
+│   ├── services/                   # Cloudinary integration
+│   ├── server.js                   # Entry point
+│   └── package.json
+│
+├── frontend/                       # React application
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx        # Navigation bar with user menu
-│   │   │   ├── PrivateRoute.jsx  # Protected route wrapper
-│   │   │   ├── AdminRoute.jsx    # Admin-only route wrapper
-│   │   │   ├── ResourceCard.jsx  # Resource display card (deprecated)
-│   │   │   ├── ResourceTable.jsx # Resource table with view tracking
-│   │   │   └── DeleteConfirmationModal.jsx # Deletion confirmation UI
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx   # Authentication state management
-│   │   ├── pages/
-│   │   │   ├── Login.jsx         # Login page with validation
-│   │   │   ├── Register.jsx      # Registration page with validation
-│   │   │   ├── Dashboard.jsx     # Main resource search and filtering
-│   │   │   ├── Upload.jsx        # Resource upload form with validation
-│   │   │   ├── MyUploads.jsx     # User's uploaded resources with deduplication
-│   │   │   ├── AllResources.jsx  # Admin view of all resources
-│   │   │   └── AdminPanel.jsx    # Admin dashboard with statistics
-│   │   ├── constants/
-│   │   │   ├── curriculum.js     # Subject and semester definitions
-│   │   │   ├── uploadLimits.js   # File size and count limits
-│   │   │   └── errorMessages.js  # Centralized error messages
-│   │   ├── utils/
-│   │   │   ├── api.js            # Axios configuration
-│   │   │   └── fileValidation.js # Client-side file validation
-│   │   ├── App.jsx               # Main app component with routing
-│   │   ├── main.jsx              # React entry point
-│   │   └── index.css             # Global Tailwind styles
-│   ├── .env.example
-│   ├── index.html
-│   ├── package.json
+│   │   ├── components/             # UI components
+│   │   ├── context/                # Auth state
+│   │   ├── pages/                  # Route pages
+│   │   ├── utils/                  # API helpers
+│   │   ├── App.jsx
+│   │   └── main.jsx
 │   ├── vite.config.js
-│   ├── tailwind.config.js        # Tailwind CSS configuration
-│   └── postcss.config.js         # PostCSS configuration
+│   ├── tailwind.config.js
+│   └── package.json
 │
-└── scripts/
-    └── generate-icons.js         # Utility script for icon generation
+└── README.md
 ```
 
-## 📦 Prerequisites
+---
 
-Before you begin, ensure you have the following installed:
+## 📋 System Requirements
 
-- **Node.js** (v16 or higher)
-- **npm** or **yarn**
-- **MongoDB Atlas account** (free tier)
-- **Cloudinary account** (free tier)
-- **Git** for version control
+| Requirement            | Version           |
+| :--------------------- | :---------------- |
+| 🟢 **Node.js**         | v16+              |
+| 📦 **npm** or **yarn** | Latest            |
+| 🗄️ **MongoDB Atlas**   | Free tier account |
+| ☁️ **Cloudinary**      | Free tier account |
+| 📂 **Git**             | Latest            |
 
-## 🚀 Installation
+---
 
-### 1. Clone the Repository
+## ✅ Upload Limits
+
+- **Documents**: 25MB max per file
+- **Images**: 10MB max per file
+- **Image Groups**: 5 images max, 50MB total
+
+---
+
+## 🎯 Getting Started
+
+### 1️⃣ Repository Setup
 
 ```bash
 git clone https://github.com/Apurba-0001/edulattice.git
 cd edulattice
 ```
 
-### 2. Install Backend Dependencies
+### 2️⃣ Backend Setup
 
 ```bash
 cd backend
 npm install
+cp .env.example .env
 ```
 
-### 3. Install Frontend Dependencies
+**Backend `.env` example:**
+
+```env
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/edulattice?retryWrites=true&w=majority
+JWT_SECRET=your-super-secret-jwt-key
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+FRONTEND_URL=http://localhost:5173
+```
+
+### 3️⃣ Frontend Setup
 
 ```bash
 cd ../frontend
 npm install
-```
-
-## ⚙️ Configuration
-
-### Backend Configuration
-
-1. **Create `.env` file** in the `backend` directory:
-
-```bash
-cd backend
 cp .env.example .env
 ```
 
-2. **Configure environment variables**:
-
-```env
-# Server Configuration
-PORT=5000
-NODE_ENV=development
-
-# Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/edulattice?retryWrites=true&w=majority
-
-# JWT Secret (generate a strong random string)
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-
-# Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-
-# Frontend URL (for CORS)
-FRONTEND_URL=http://localhost:5173
-```
-
-### Setting Up Cloudinary
-
-1. Sign up at [Cloudinary](https://cloudinary.com/) (free tier available)
-2. Go to Dashboard
-3. Copy **Cloud Name**, **API Key**, and **API Secret**
-4. Add them to your `.env` file
-5. Create a folder named `edulattice` in your Cloudinary media library (optional, for organization)
-
-### Setting Up MongoDB Atlas
-
-1. Create account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Create a new cluster (free tier M0 is sufficient)
-3. Create a database user with strong password
-4. Whitelist IP address (0.0.0.0/0 for development, specific IPs for production)
-5. Get connection string and add to `.env`
-   - Format: `mongodb+srv://username:password@cluster.mongodb.net/edulattice?retryWrites=true&w=majority`
-
-### Frontend Configuration
-
-1. **Create `.env` file** in the `frontend` directory:
-
-```bash
-cd frontend
-cp .env.example .env
-```
-
-2. **Configure environment variables**:
+**Frontend `.env` example:**
 
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-For production, replace with your deployed backend URL:
+---
 
-```env
-VITE_API_URL=https://your-backend-url.onrender.com/api
-```
-
-## 🏃 Running the Application
-
-### Development Mode
-
-**Terminal 1 - Backend:**
+## ▶️ Run Locally
 
 ```bash
 cd backend
 npm run dev
 ```
 
-Backend runs on `http://localhost:5000`
-
-**Terminal 2 - Frontend:**
-
 ```bash
-cd frontend
+cd ../frontend
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173`
+Backend: `http://localhost:5000`  
+Frontend: `http://localhost:5173`
 
-### Production Build
+---
 
-**Backend:**
+## 🔌 API Reference
 
-```bash
-cd backend
-npm start
+### 🔐 Authentication
+
+| Method | Endpoint             | Description   | Auth        |
+| ------ | -------------------- | ------------- | ----------- |
+| POST   | `/api/auth/register` | Register user | No          |
+| POST   | `/api/auth/login`    | Login         | No          |
+| GET    | `/api/auth/me`       | Current user  | Yes         |
+| GET    | `/api/auth/users`    | List users    | Yes (Admin) |
+
+### 📚 Resources
+
+| Method | Endpoint                      | Description                 | Auth |
+| ------ | ----------------------------- | --------------------------- | ---- |
+| POST   | `/api/resources`              | Upload resource(s)          | Yes  |
+| GET    | `/api/resources`              | List resources with filters | Yes  |
+| GET    | `/api/resources/:id`          | Resource details            | Yes  |
+| POST   | `/api/resources/:id/view`     | Track view                  | Yes  |
+| GET    | `/api/resources/:id/download` | Download resource           | Yes  |
+
+---
+
+## 🔑 Demo Credentials
+
+Use seeded accounts if your deployment provides them.
+
+```
+Admin Email:    admin@edulattice.com
+Admin Password: Admin@123456
+
+Student Email:  student@edulattice.com
+Student Password: Student@123456
 ```
 
-**Frontend:**
+---
 
-```bash
-cd frontend
-npm run build
-npm run preview
-```
+## 🚀 Deployment Guide
 
-## 🌐 Deployment
+### Deploy Backend (Render)
 
-### Backend Deployment (Render)
+1. Create a Render Web Service (root: `backend`)
+2. Build Command: `npm install`
+3. Start Command: `node server.js`
+4. Add environment variables from backend `.env`
 
-1. **Create account** on [Render](https://render.com/)
+### Deploy Frontend (Render)
 
-2. **Create new Web Service**
-   - Connect your GitHub repository
-   - Select `backend` directory (if monorepo, use root directory filter)
-   - Configure build settings:
-     ```
-     Build Command: npm install
-     Start Command: node server.js
-     ```
+1. Create a Render Web Service (root: `frontend`)
+2. Build Command: `npm install && npm run build`
+3. Start Command: `npm run preview`
+4. Add `VITE_API_URL` pointing to the backend URL
 
-3. **Add Environment Variables**
-   - Go to Environment tab
-   - Add all variables from `.env` file
-   - For `FRONTEND_URL`, use your Render frontend deployment URL
+---
 
-4. **Deploy**
-   - Render will automatically deploy your backend
-   - Note the deployment URL (e.g., `https://edulattice-api.onrender.com`)
+## 🔒 Security Best Practices
 
-### Frontend Deployment (Render)
+- Passwords hashed with bcrypt
+- JWT auth with protected routes
+- Input validation and sanitization
+- File type and size enforcement
+- Role-based access control for admin actions
 
-1. **Create account** on [Render](https://render.com/) (same as backend)
+---
 
-2. **Create new Web Service**
-   - Connect your GitHub repository
-   - Select `frontend` directory
-   - Configure build settings:
-     ```
-     Build Command: npm install && npm run build
-     Start Command: npm run preview
-     ```
-   - Or use with a static site if preferred (publish `dist` folder)
+## 🧩 Contributing
 
-3. **Configure Environment Variables**
-   - Go to Environment tab
-   - Add environment variables:
-     ```
-     VITE_API_URL=https://your-backend-url.onrender.com/api
-     ```
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-4. **Deploy**
-   - Render will automatically build and deploy
-   - Your frontend will be live at `https://your-frontend.onrender.com`
-   - Note: Free tier services may take 15-30 seconds to spin up on first request
+---
 
-5. **Update Backend CORS**
-   - Go back to Render backend environment variables
-   - Update `FRONTEND_URL` with your Render frontend URL (e.g., `https://your-frontend.onrender.com`)
-   - Redeploy backend for CORS changes to take effect
+## 🗺️ Roadmap
 
-### Database (MongoDB Atlas)
+- [ ] Resource tagging and categorization
+- [ ] Comments and discussion threads
+- [ ] Enhanced analytics exports (CSV/PDF)
+- [ ] Advanced search and full-text indexing
+- [ ] Notifications and activity feed
 
-MongoDB Atlas is already cloud-hosted. Ensure:
+---
 
-- Database user has proper permissions
-- IP whitelist includes `0.0.0.0/0` (for production access)
-- Connection string is correctly configured in environment variables
+## 📜 License
 
-## 📚 API Documentation
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-### Authentication Endpoints
+---
 
-#### Register User
+## 👨‍💻 Author
 
-```http
-POST /api/auth/register
-Content-Type: application/json
+**Apurba Maji** - Full Stack Developer
 
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "Password@123"
-}
-```
+---
+
+_Last Updated: May 2026_
 
 **Response:**
 
