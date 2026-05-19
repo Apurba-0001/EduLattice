@@ -6,6 +6,10 @@ A full-stack web application for sharing and managing educational resources with
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue)
 
+## 🚀 Live Demo
+
+https://edulattice.onrender.com
+
 ## 📋 Table of Contents
 
 - [Features](#features)
