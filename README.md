@@ -491,21 +491,6 @@ After installation, you can:
 - Follow the architectural patterns shown in existing controllers and components
 - Respect the role-based access control patterns (PrivateRoute, AdminRoute)
 
-## 📚 Database Schema
-
-### User Model
-
-### Resource Model
-
-### Database Indexes
-
-- `{uploadedBy, createdAt}` - Quick lookup of user's uploads
-- `{subject, semester}` - For filtered queries
-- `{views: -1}` - For trending resources
-- `{downloads: -1}` - For popular resources
-- `{imageGroupId}` - For grouped image queries
-- `{email: 1}` (unique) - User email lookups
-
 ## 🌟 Key Features Explained
 
 ### Image Grouping System
@@ -532,29 +517,17 @@ When users upload multiple images at once:
 - **Double extension check**: Detects .jpg.exe style attacks
 - **Whitelist approach**: Only known-safe types allowed
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Author
+## 👨‍💻 Creator
 
 **Apurba** - Project Creator and Lead Developer
 
-## 🙏 Acknowledgments
+## ✨Acknowledgments
 
 - MongoDB for reliable cloud database platform
 - Cloudinary for excellent file storage and CDN
 - React team for outstanding JavaScript framework
 - Node.js and Express community
 - Render for seamless full-stack deployment platform
-
-## 📞 Support & Issues
-
-For bug reports, feature requests, or general support:
-
-1. **GitHub Issues**: [Create an issue](../../issues/new) with detailed description
-2. **Email**: support@edulattice.com
-3. **Documentation**: Check existing docs before reporting
 
 ## 🚀 Future Enhancements
 
@@ -577,4 +550,4 @@ Potential improvements for future versions:
 
 ---
 
-**Built with ❤️ for education by students, for students**
+**Built with ❤️ for education by student, for students**
