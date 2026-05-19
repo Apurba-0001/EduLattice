@@ -381,19 +381,6 @@ _Last Updated: May 2026_
 
 **Response:**
 
-## 📸 Features Demonstration
-
-You can test the application using the following test credentials:
-
-**Admin Account:**
-
-- Email: admin@edulattice.com
-- Password: Admin@123456 (adjust to your actual test credentials)
-
-**Student Account:**
-
-- Email: student@edulattice.com
-- Password: Student@123456 (adjust to your actual test credentials)
 
 ## 🔒 Security Features
 
