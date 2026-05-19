@@ -1,4 +1,6 @@
 # .gitignore for EduLattice
+.gitattributes
+.github
 
 # Dependencies
 node_modules/
