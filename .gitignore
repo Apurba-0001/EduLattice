@@ -38,6 +38,13 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
+# Agent customization
+*.agent.md
+*.prompt.md
+*.instructions.md
+AGENTS.md
+.agents/
+
 # Build outputs
 dist/
 build/
