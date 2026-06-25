@@ -1,39 +1,17 @@
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import User from "./models/User.js";
+const manualRoleChangeNotice = () => {
+  const email = process.argv[2];
+  const target = email || "<user-email>";
 
-dotenv.config();
-
-const makeAdmin = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("Connected to MongoDB");
-
-    // Find user by email and make them admin
-    // Uses native MongoDB driver to bypass Mongoose immutable guard on isAdmin
-    const email = process.argv[2] || "apurba@email.com";
-    const result = await User.collection.updateOne(
-      { email },
-      { $set: { isAdmin: true } },
-    );
-
-    if (result.matchedCount > 0) {
-      const user = await User.findOne({ email });
-      console.log(`✅ User ${email} is now an admin!`);
-      console.log("User details:", {
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-      });
-    } else {
-      console.log(`❌ User with email ${email} not found`);
-    }
-
-    await mongoose.connection.close();
-  } catch (error) {
-    console.error("Error:", error.message);
-    process.exit(1);
-  }
+  console.log(
+    "Role changes are intentionally disabled in the application API.",
+  );
+  console.log(
+    "Update the MongoDB document manually if you need to change a role.",
+  );
+  console.log(
+    `Example MongoDB shell update for ${target}: db.users.updateOne({ email: "${target}" }, { $set: { isAdmin: true } })`,
+  );
+  process.exit(1);
 };
 
-makeAdmin();
+manualRoleChangeNotice();

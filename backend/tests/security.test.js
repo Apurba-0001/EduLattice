@@ -40,6 +40,7 @@ const run = async () => {
     email: `test_${Date.now()}@example.com`,
     password: "ValidPass1!",
     role: "ADMIN",
+    isAdmin: true,
   });
   const roleIsStudent = register.data?.data?.isAdmin === false;
   log("T03 register admin role ignored", roleIsStudent);
@@ -94,6 +95,16 @@ const run = async () => {
   log(
     "T07 NoSQL injection blocked",
     [400, 401].includes(nosqlAttempt.response.status),
+  );
+
+  const registerInjection = await postJson(`${API_BASE}/auth/register`, {
+    name: { $gt: "" },
+    email: `inject_${Date.now()}@example.com`,
+    password: "ValidPass1!",
+  });
+  log(
+    "T08 register NoSQL injection blocked",
+    registerInjection.response.status === 400,
   );
 };
 
