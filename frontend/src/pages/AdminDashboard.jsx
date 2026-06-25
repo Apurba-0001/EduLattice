@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import ResourceTable from "../components/ResourceTable";
@@ -10,7 +9,6 @@ const USERS_PER_PAGE = 10;
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [resources, setResources] = useState([]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -305,7 +303,6 @@ const AdminDashboard = () => {
             <button
               onClick={() => {
                 logout();
-                navigate("/login");
               }}
               className="neu-btn-danger px-5 py-3 rounded-xl font-semibold text-sm sm:text-base"
             >

@@ -136,12 +136,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = useCallback(async ({ redirect = true } = {}) => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);
-    window.location.href = "/login";
-  };
+    if (redirect) {
+      window.location.replace("/login");
+    }
+  }, []);
 
   // Auto-logout on inactivity
   const handleInactivityTimeout = useCallback(() => {

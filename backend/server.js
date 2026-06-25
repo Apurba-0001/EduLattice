@@ -27,6 +27,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import compression from "compression";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/admin.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
 
 // Initialize Express app
@@ -118,6 +119,7 @@ app.use(
 
 // ========== ROUTES ==========
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/resources", resourceRoutes);
 
 // Public config endpoint — intentionally unauthenticated.

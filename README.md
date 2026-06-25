@@ -381,10 +381,6 @@ _Last Updated: May 2026_
 
 **Response:**
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 ## 🔒 Security Features
 
 - **Password Requirements**: Minimum 8 characters including uppercase, lowercase, number, and special character (@$!%\*?&)

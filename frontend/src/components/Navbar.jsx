@@ -1,18 +1,16 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    logout();
     setMobileMenuOpen(false);
-    navigate("/login");
+    logout();
   };
 
   const handleCloseModal = () => {

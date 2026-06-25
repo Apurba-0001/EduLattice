@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { validatePassword } from "../utils/validatePassword.js";
 
 // Generate JWT Token — 1 hour expiry with lastActivity for inactivity tracking
 const generateToken = (id) => {
@@ -41,6 +42,14 @@ export const register = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "One or more fields exceed maximum allowed length",
+      });
+    }
+
+    const passwordCheck = validatePassword(password, email, name);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        message: passwordCheck.reason,
       });
     }
 
@@ -140,9 +149,11 @@ export const login = async (req, res) => {
       });
     }
 
-    // Update last activity on successful login
-    user.lastActivity = new Date();
-    await user.save();
+    // Update last activity without re-validating the password hash
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { lastActivity: new Date() } },
+    );
 
     const token = generateToken(user._id);
     res.status(200).json({

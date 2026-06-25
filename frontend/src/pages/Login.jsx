@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,8 +11,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth();
+  const { login, logout, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      logout({ redirect: false });
+    }
+  }, [authLoading, user, logout]);
 
   const handleChange = (e) => {
     setFormData({

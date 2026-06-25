@@ -50,9 +50,11 @@ export const protect = async (req, res, next) => {
         });
       }
 
-      // Update last activity in database (non-blocking)
-      req.user.lastActivity = new Date();
-      req.user.save().catch((err) => {
+      // Update last activity without triggering password validation
+      User.updateOne(
+        { _id: req.user._id },
+        { $set: { lastActivity: new Date() } },
+      ).catch((err) => {
         if (process.env.NODE_ENV === "development") {
           console.error("Error updating lastActivity:", err.message);
         }
